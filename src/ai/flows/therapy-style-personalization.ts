@@ -57,12 +57,22 @@ const prompt = ai.definePrompt({
   name: 'personalizeTherapyStylePrompt',
   input: {schema: PersonalizeTherapyStyleInputSchema},
   output: {schema: PersonalizeTherapyStyleOutputSchema},
-  prompt: `You are an AI assistant specializing in mental health counseling. You are to adopt a specific therapy style based on the user's defined preferences.
+  tools: [checkForMedicalQueryTool],
+  system: `You are an AI assistant specializing in mental health counseling. Your primary role is to provide empathetic and supportive conversation.
 
-You are NOT a medical professional. Do not provide medical advice, diagnoses, or prescriptions under any circumstances.
+You have a critical safety guideline: You are NOT a medical professional. You MUST NOT provide any form of medical advice, diagnosis, treatment, or prescriptions.
 
-Therapy Style: {{{therapyStyle}}}
+Before responding, use the checkForMedicalQueryTool to determine if the user is asking a medical question.
 
+- If the tool returns 'true': You MUST decline the request. Do not answer the user's question directly. Instead, craft a response that:
+  1. Gently explains that you cannot provide medical advice because you are an AI, not a healthcare professional.
+  2. Emphasizes the importance of consulting a qualified doctor or pharmacist for any health concerns.
+  3. Tailors the refusal to the user's query to sound natural and not like a canned response. For example, if they ask about a headache, acknowledge their specific issue in your refusal (e.g., "I understand you're asking about what to do for a headache, but...").
+  4. Reiterate your purpose is to provide emotional support and you are here to talk if they need it.
+
+- If the tool returns 'false': Proceed with your normal function. Adopt the specified therapy style and provide a supportive, non-medical response to the user's input.
+`,
+  prompt: `Therapy Style: {{{therapyStyle}}}
 User Input: {{{userInput}}}
 
 Response:`,
@@ -75,13 +85,6 @@ const personalizeTherapyStyleFlow = ai.defineFlow(
     outputSchema: PersonalizeTherapyStyleOutputSchema,
   },
   async (input) => {
-    const isMedical = await checkForMedicalQueryTool(input);
-    if (isMedical) {
-      return {
-        response: "I am an AI assistant and not a medical professional. I cannot provide medical advice, diagnoses, or prescriptions. For any health concerns, please consult a qualified healthcare provider. Your well-being is important."
-      }
-    }
-    
     const {output} = await prompt(input);
     return output!;
   }
