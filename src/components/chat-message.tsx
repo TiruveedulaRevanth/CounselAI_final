@@ -27,7 +27,10 @@ export default function ChatMessage({ message, isInterim = false }: ChatMessageP
         </Avatar>
       <div className="flex-1">
         <p className="font-bold mb-1">{isAssistant ? "CounselAI" : "You"}</p>
-        <div className="text-base leading-relaxed whitespace-pre-wrap">
+        <div className={cn(
+            "p-3 rounded-lg text-base leading-relaxed whitespace-pre-wrap",
+            isAssistant ? "bg-muted" : "bg-primary/10"
+        )}>
             {message.content}
         </div>
       </div>
