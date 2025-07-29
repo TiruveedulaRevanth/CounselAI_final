@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Settings } from "lucide-react";
+import { useState } from "react";
 
 interface SettingsDialogProps {
   voices: SpeechSynthesisVoice[];
@@ -36,14 +37,15 @@ export default function SettingsDialog({
   therapyStyle,
   setTherapyStyle,
 }: SettingsDialogProps) {
-
+  const [isOpen, setIsOpen] = useState(false);
+  
   const handleVoiceChange = (value: string) => {
     const voice = voices.find(v => v.name === value) || null;
     setSelectedVoice(voice);
   };
     
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
           <Settings className="h-6 w-6" />
@@ -64,18 +66,17 @@ export default function SettingsDialog({
             </Label>
             <Select
               onValueChange={handleVoiceChange}
-              defaultValue={selectedVoice?.name}
               value={selectedVoice?.name}
             >
               <SelectTrigger id="voice" className="col-span-3">
                 <SelectValue placeholder="Select a voice" />
               </SelectTrigger>
               <SelectContent>
-                {voices.map((voice) => (
+                {voices.length > 0 ? voices.map((voice) => (
                   <SelectItem key={voice.name} value={voice.name}>
                     {voice.name} ({voice.lang})
                   </SelectItem>
-                ))}
+                )) : <SelectItem value="loading" disabled>Loading voices...</SelectItem>}
               </SelectContent>
             </Select>
           </div>
@@ -94,7 +95,7 @@ export default function SettingsDialog({
           </div>
         </div>
         <DialogFooter>
-          {/* Settings are applied live, so no save button needed. A close button is provided by the dialog. */}
+           <Button onClick={() => setIsOpen(false)}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -4,7 +4,7 @@ import { personalizeTherapyStyle } from "@/ai/flows/therapy-style-personalizatio
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { BrainCircuit, Mic, Send } from "lucide-react";
+import { BrainCircuit, Mic, Send, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ChatMessage from "./chat-message";
 import SettingsDialog from "./settings-dialog";
@@ -36,6 +36,7 @@ export default function EmpathAIClient() {
   ]);
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [userInput, setUserInput] = useState("");
 
   // Settings state
@@ -55,9 +56,20 @@ export default function EmpathAIClient() {
       if (selectedVoice) {
         utterance.voice = selectedVoice;
       }
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      
       // Stop any currently speaking utterance before starting a new one
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const handleStopSpeaking = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
     }
   };
 
@@ -72,17 +84,22 @@ export default function EmpathAIClient() {
           setSelectedVoice(preferredVoice);
         }
       };
-      window.speechSynthesis.onvoiceschanged = loadVoices;
+      // onvoiceschanged is not reliable, so we poll for voices
+      const voiceInterval = setInterval(loadVoices, 200);
       loadVoices();
       
       if (!hasSpokenInitialMessage.current && messages.length > 0) {
         setTimeout(() => {
           speakText(messages[0].content);
           hasSpokenInitialMessage.current = true;
-        }, 100);
+        }, 500); // Increased delay to ensure voices are loaded
       }
-    }
 
+      return () => clearInterval(voiceInterval);
+    }
+  }, []); // Run only once
+
+  useEffect(() => {
     if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
@@ -119,13 +136,14 @@ export default function EmpathAIClient() {
 
       speechRecognition.current = recognition;
     }
-  }, [selectedVoice, toast]);
+  }, [toast]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
   const handleMicClick = () => {
+    handleStopSpeaking();
     if (isListening) {
       speechRecognition.current?.stop();
       if(userInput.trim()) {
@@ -149,7 +167,7 @@ export default function EmpathAIClient() {
     setMessages((prev) => [...prev, newUserMessage]);
     setUserInput("");
     setIsLoading(true);
-    window.speechSynthesis.cancel(); // Stop speaking when user sends a message
+    handleStopSpeaking();
 
     try {
       const result = await personalizeTherapyStyle({
@@ -176,7 +194,12 @@ export default function EmpathAIClient() {
         description:
           "Sorry, I encountered an error. Please try again.",
       });
-      // Optionally remove the user message or add an error message to the chat
+      const assistantErrorMessage: Message = {
+        id: Date.now().toString() + "-ai-error",
+        role: "assistant",
+        content: "I'm sorry, I seem to be having trouble connecting. Please try again in a moment.",
+      }
+      setMessages((prev) => [...prev, assistantErrorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -205,10 +228,10 @@ export default function EmpathAIClient() {
         />
       </header>
 
-      <main className="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto">
+      <main className="flex-1 flex flex-col p-4 md:p-6 min-h-0">
         <Card className="flex-1 flex flex-col shadow-lg">
-          <CardContent className="flex-1 p-2 md:p-4">
-            <ScrollArea className="h-full">
+          <CardContent className="flex-1 p-2 md:p-4 flex">
+            <ScrollArea className="flex-1 h-full">
               <div className="space-y-4 pr-4">
                 {messages.map((msg) => (
                   <ChatMessage key={msg.id} message={msg} />
@@ -235,16 +258,27 @@ export default function EmpathAIClient() {
             rows={1}
             disabled={isLoading || isListening}
           />
-           <Button
-            size="icon"
-            className={`h-10 w-10 shrink-0 ${
-              isListening ? "bg-destructive" : "bg-primary"
-            }`}
-            onClick={handleMicClick}
-            disabled={isLoading}
-          >
-            <Mic className="h-5 w-5" />
-          </Button>
+           {isSpeaking ? (
+            <Button
+              size="icon"
+              variant="destructive"
+              className="h-10 w-10 shrink-0"
+              onClick={handleStopSpeaking}
+            >
+              <Square className="h-5 w-5" />
+            </Button>
+           ) : (
+            <Button
+              size="icon"
+              className={`h-10 w-10 shrink-0 ${
+                isListening ? "bg-destructive" : "bg-primary"
+              }`}
+              onClick={handleMicClick}
+              disabled={isLoading}
+            >
+              <Mic className="h-5 w-5" />
+            </Button>
+           )}
           <Button
             size="icon"
             onClick={() => handleSend(userInput)}
@@ -254,8 +288,8 @@ export default function EmpathAIClient() {
             <Send className="h-5 w-5" />
           </Button>
         </div>
-         <p className="text-sm text-muted-foreground text-center mt-2">
-            {isListening ? "Listening... Click the mic to send." : isLoading ? "" : "Press Enter to send. Use Shift+Enter for a new line."}
+         <p className="text-sm text-muted-foreground text-center mt-2 h-4">
+            {isListening ? "Listening... Click the mic to send." : isSpeaking ? "Speaking..." : isLoading ? "" : "Press Enter to send. Use Shift+Enter for a new line."}
         </p>
       </footer>
     </div>
