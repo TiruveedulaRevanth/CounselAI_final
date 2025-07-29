@@ -23,6 +23,10 @@ import { Settings } from "lucide-react";
 import { useState } from "react";
 import { therapyStyles } from "./empath-ai-client";
 import { Input } from "./ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 
 interface SettingsDialogProps {
   voices: SpeechSynthesisVoice[];
@@ -33,6 +37,18 @@ interface SettingsDialogProps {
   children?: React.ReactNode;
 }
 
+const settingsSchema = z.object({
+  email: z.string().email({ message: "Invalid email address." }).refine(
+    (email) => email.endsWith("@gmail.com"),
+    {
+      message: "Please enter a valid Gmail address.",
+    }
+  ),
+  phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, { message: "Phone number must be in (123) 456-7890 format." }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters long." }),
+});
+
+
 export default function SettingsDialog({
   voices,
   selectedVoice,
@@ -42,9 +58,15 @@ export default function SettingsDialog({
   children,
 }: SettingsDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
+
+  const form = useForm<z.infer<typeof settingsSchema>>({
+    resolver: zodResolver(settingsSchema),
+    defaultValues: {
+      email: "",
+      phone: "",
+      password: "",
+    },
+  });
   
   const handleVoiceChange = (value: string) => {
     const voice = voices.find(v => v.name === value) || null;
@@ -57,6 +79,11 @@ export default function SettingsDialog({
       setTherapyStyle(style.prompt);
     }
   };
+
+  const onSubmit = (values: z.infer<typeof settingsSchema>) => {
+    console.log(values);
+    setIsOpen(false);
+  }
     
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -75,89 +102,98 @@ export default function SettingsDialog({
             Customize your CounselAI experience and manage your account.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="email" className="text-right">
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="col-span-3"
-              placeholder="name@example.com"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-4 items-center gap-4">
+                  <FormLabel className="text-right">Email</FormLabel>
+                  <div className="col-span-3">
+                    <FormControl>
+                      <Input placeholder="name@gmail.com" {...field} />
+                    </FormControl>
+                    <FormMessage className="mt-1" />
+                  </div>
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="phone" className="text-right">
-              Phone
-            </Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="col-span-3"
-              placeholder="(123) 456-7890"
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-4 items-center gap-4">
+                  <FormLabel className="text-right">Phone</FormLabel>
+                   <div className="col-span-3">
+                      <FormControl>
+                        <Input placeholder="(123) 456-7890" {...field} />
+                      </FormControl>
+                      <FormMessage className="mt-1" />
+                  </div>
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="password" className="text-right">
-              Password
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="col-span-3"
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-4 items-center gap-4">
+                  <FormLabel className="text-right">Password</FormLabel>
+                   <div className="col-span-3">
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage className="mt-1" />
+                  </div>
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="voice" className="text-right">
-              AI Voice
-            </Label>
-            <Select
-              onValueChange={handleVoiceChange}
-              value={selectedVoice?.name}
-            >
-              <SelectTrigger id="voice" className="col-span-3">
-                <SelectValue placeholder="Select a voice" />
-              </SelectTrigger>
-              <SelectContent>
-                {voices.length > 0 ? voices.map((voice) => (
-                  <SelectItem key={voice.name} value={voice.name}>
-                    {voice.name} ({voice.lang})
-                  </SelectItem>
-                )) : <SelectItem value="loading" disabled>Loading voices...</SelectItem>}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="therapy-style" className="text-right">
-              Therapy Style
-            </Label>
-            <Select
-              onValueChange={handleTherapyStyleChange}
-              value={therapyStyle}
-            >
-              <SelectTrigger id="therapy-style" className="col-span-3">
-                <SelectValue placeholder="Select a style" />
-              </SelectTrigger>
-              <SelectContent>
-                {therapyStyles.map((style) => (
-                  <SelectItem key={style.name} value={style.prompt}>
-                    {style.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <DialogFooter>
-           <Button onClick={() => setIsOpen(false)}>Save & Close</Button>
-        </DialogFooter>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="voice" className="text-right">
+                AI Voice
+              </Label>
+              <Select
+                onValueChange={handleVoiceChange}
+                value={selectedVoice?.name}
+              >
+                <SelectTrigger id="voice" className="col-span-3">
+                  <SelectValue placeholder="Select a voice" />
+                </SelectTrigger>
+                <SelectContent>
+                  {voices.length > 0 ? voices.map((voice) => (
+                    <SelectItem key={voice.name} value={voice.name}>
+                      {voice.name} ({voice.lang})
+                    </SelectItem>
+                  )) : <SelectItem value="loading" disabled>Loading voices...</SelectItem>}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="therapy-style" className="text-right">
+                Therapy Style
+              </Label>
+              <Select
+                onValueChange={handleTherapyStyleChange}
+                value={therapyStyle}
+              >
+                <SelectTrigger id="therapy-style" className="col-span-3">
+                  <SelectValue placeholder="Select a style" />
+                </SelectTrigger>
+                <SelectContent>
+                  {therapyStyles.map((style) => (
+                    <SelectItem key={style.name} value={style.prompt}>
+                      {style.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="submit">Save & Close</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
