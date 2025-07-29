@@ -9,8 +9,8 @@ import { BrainCircuit, Mic, Plus, Send, Square, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import ChatMessage from "./chat-message";
 import SettingsDialog from "./settings-dialog";
-import { Textarea } from "./ui/textarea";
-import { ScrollArea } from "./ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sidebar,
   SidebarContent,
@@ -24,7 +24,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenuAction,
-} from "./ui/sidebar";
+} from "@/components/ui/sidebar";
 import { subDays, isToday, isYesterday, isAfter } from 'date-fns';
 import {
   AlertDialog,
@@ -171,7 +171,7 @@ export default function EmpathAIClient() {
     });
   };
 
-  const activeChat = chats.find(chat => chat.id === activeChatId);
+  const activeChat = useMemo(() => chats.find(chat => chat.id === activeChatId), [chats, activeChatId]);
 
   const updateMessages = (updater: (prevMessages: Message[]) => Message[]) => {
     setChats(prevChats =>
@@ -293,13 +293,14 @@ export default function EmpathAIClient() {
     if (!text.trim() || isLoading || !activeChatId) return;
 
     const isFirstMessage = activeChat && activeChat.messages.length === 0;
-
+    
     const newUserMessage: Message = {
       id: Date.now().toString(),
       role: "user",
       content: text,
     };
     
+    // Immediately update the messages to include the user's new message
     updateMessages((prev) => [...prev, newUserMessage]);
     setUserInput("");
     setIsLoading(true);
@@ -310,7 +311,8 @@ export default function EmpathAIClient() {
         setChats(prev => prev.map(chat => chat.id === activeChatId ? {...chat, name: title} : chat));
       } catch (e) {
           console.error("Failed to summarize chat title, using default.", e);
-          setChats(prev => prev.map(chat => chat.id === activeChatId ? {...chat, name: text.substring(0, 40)} : chat));
+          // Fallback to using a snippet of the message as title
+          setChats(prev => prev.map(chat => chat.id === activeChatId ? {...chat, name: text.substring(0, 40) + '...'} : chat));
       }
     }
     
@@ -496,48 +498,48 @@ export default function EmpathAIClient() {
           </main>
 
           <footer className="p-4 w-full">
-            <div className="flex items-end gap-2 max-w-2xl mx-auto bg-secondary rounded-2xl border p-2">
-                <Textarea
-                    value={userInput}
-                    onChange={(e) => setUserInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Ask anything..."
-                    className="flex-1 resize-none bg-transparent border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 pr-20"
-                    rows={1}
-                    disabled={isLoading || !activeChatId}
-                />
-                <div className="flex items-center gap-1">
-                    {isSpeaking ? (
-                        <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-10 w-10 shrink-0 rounded-full"
-                        onClick={handleStopSpeaking}
-                        >
-                        <Square className="h-5 w-5" />
-                        </Button>
-                    ) : (
-                        <Button
-                        size="icon"
-                        variant="ghost"
-                        className={`h-10 w-10 shrink-0 rounded-full ${
-                            isListening ? "text-red-500" : ""
-                        }`}
-                        onClick={handleMicClick}
-                        disabled={isLoading || !activeChatId}
-                        >
-                        <Mic className="h-5 w-5" />
-                        </Button>
-                    )}
-                    <Button
-                        size="icon"
-                        onClick={() => handleSend(userInput)}
-                        disabled={!userInput.trim() || isLoading || !activeChatId}
-                        className="h-10 w-10 shrink-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-gray-600"
-                    >
-                        <Send className="h-5 w-5" />
-                    </Button>
-                </div>
+            <div className="flex items-end gap-2 max-w-2xl mx-auto bg-card rounded-2xl border p-2">
+              <Textarea
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask anything..."
+                  className="flex-1 resize-none bg-transparent border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 pr-20"
+                  rows={1}
+                  disabled={isLoading || !activeChatId}
+              />
+              <div className="flex items-center gap-1">
+                  {isSpeaking ? (
+                      <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-10 w-10 shrink-0 rounded-full"
+                      onClick={handleStopSpeaking}
+                      >
+                      <Square className="h-5 w-5" />
+                      </Button>
+                  ) : (
+                      <Button
+                      size="icon"
+                      variant="ghost"
+                      className={`h-10 w-10 shrink-0 rounded-full ${
+                          isListening ? "text-red-500" : ""
+                      }`}
+                      onClick={handleMicClick}
+                      disabled={isLoading || !activeChatId}
+                      >
+                      <Mic className="h-5 w-5" />
+                      </Button>
+                  )}
+                  <Button
+                      size="icon"
+                      onClick={() => handleSend(userInput)}
+                      disabled={!userInput.trim() || isLoading || !activeChatId}
+                      className="h-10 w-10 shrink-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-gray-600"
+                  >
+                      <Send className="h-5 w-5" />
+                  </Button>
+              </div>
             </div>
             <p className="text-xs text-muted-foreground text-center mt-2 h-4">
                 {isListening ? "Listening... Press mic again to stop." : isSpeaking ? "Speaking..." : isLoading ? "Thinking..." : activeChatId ? "CounselAI can make mistakes. Consider checking important information." : "Create a new chat to begin."}
@@ -548,3 +550,5 @@ export default function EmpathAIClient() {
     </>
   );
 }
+
+    
