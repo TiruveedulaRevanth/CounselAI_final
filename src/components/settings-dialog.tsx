@@ -34,7 +34,7 @@ interface SettingsDialogProps {
   setTherapyStyle: (style: string) => void;
   isSignUpOpen: boolean;
   setIsSignUpOpen: (isOpen: boolean) => void;
-  onSignUpSuccess: () => void;
+  onSignUpSuccess: (name: string) => void;
   isSettingsOpen: boolean;
   setIsSettingsOpen: (isOpen: boolean) => void;
 }
@@ -80,7 +80,7 @@ export default function SettingsDialog({
         title: "Sign Up Successful",
         description: "You can now start using CounselAI.",
     });
-    onSignUpSuccess();
+    onSignUpSuccess(values.name);
   };
 
   const handleVoiceChange = (value: string) => {

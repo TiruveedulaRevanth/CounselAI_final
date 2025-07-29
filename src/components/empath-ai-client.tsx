@@ -94,6 +94,7 @@ export default function EmpathAIClient() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -113,21 +114,27 @@ export default function EmpathAIClient() {
 
   useEffect(() => {
       const signedIn = localStorage.getItem("counselai-signed-in") === "true";
+      const name = localStorage.getItem("counselai-user-name");
       setIsSignedIn(signedIn);
+      setUserName(name);
       if (!signedIn) {
           setIsSignUpOpen(true);
       }
   }, []);
 
-  const handleSignUpSuccess = () => {
+  const handleSignUpSuccess = (name: string) => {
     localStorage.setItem("counselai-signed-in", "true");
+    localStorage.setItem("counselai-user-name", name);
     setIsSignedIn(true);
+    setUserName(name);
     setIsSignUpOpen(false);
   }
 
   const handleSignOut = () => {
     localStorage.removeItem("counselai-signed-in");
+    localStorage.removeItem("counselai-user-name");
     setIsSignedIn(false);
+    setUserName(null);
     setChats([]);
     setActiveChatId(null);
     setIsSignUpOpen(true);
@@ -578,7 +585,7 @@ export default function EmpathAIClient() {
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
                     <BrainLogo className="w-16 h-16 text-primary mb-4"/>
-                    <h2 className="text-2xl font-bold">Ready when you are.</h2>
+                    <h2 className="text-2xl font-bold">{userName ? `Welcome back, ${userName}` : 'Ready when you are.'}</h2>
                     <p className="text-muted-foreground mt-2">Start a new conversation by typing below or using the microphone.</p>
                 </div>
               )}
