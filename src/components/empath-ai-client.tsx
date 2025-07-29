@@ -5,7 +5,7 @@ import { summarizeChat } from "@/ai/flows/summarize-chat-flow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { BrainCircuit, Mic, Plus, Send, Square } from "lucide-react";
+import { BrainCircuit, Mic, Plus, Send, Square, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import ChatMessage from "./chat-message";
 import SettingsDialog from "./settings-dialog";
@@ -21,11 +21,22 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  SidebarSeparator,
   SidebarGroup,
   SidebarGroupLabel,
+  SidebarMenuAction,
 } from "./ui/sidebar";
 import { formatDistanceToNow, isToday, isYesterday, isAfter, subDays } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 
 declare global {
@@ -133,10 +144,12 @@ export default function EmpathAIClient() {
   useEffect(() => {
     if (chats.length > 0) {
       localStorage.setItem("counselai-chats", JSON.stringify(chats));
+    } else {
+      localStorage.removeItem("counselai-chats");
     }
   }, [chats]);
   
-  const createNewChat = () => {
+  const createNewChat = useCallback(() => {
     const newChat: Chat = {
       id: `chat-${Date.now()}`,
       name: "New Chat",
@@ -145,7 +158,24 @@ export default function EmpathAIClient() {
     };
     setChats(prev => [newChat, ...prev]);
     setActiveChatId(newChat.id);
-  }
+    return newChat.id;
+  }, []);
+
+  const handleDeleteChat = (chatId: string) => {
+    setChats(prev => {
+        const remainingChats = prev.filter(c => c.id !== chatId);
+        if (activeChatId === chatId) {
+            if (remainingChats.length > 0) {
+                setActiveChatId(remainingChats[0].id);
+            } else {
+                const newId = createNewChat();
+                setActiveChatId(newId);
+                return chats.filter(c => c.id === newId); // Return only the new chat
+            }
+        }
+        return remainingChats;
+    });
+  };
 
   const activeChat = chats.find(chat => chat.id === activeChatId);
 
@@ -280,15 +310,16 @@ export default function EmpathAIClient() {
     updateMessages((prev) => [...prev, newUserMessage]);
     
     // Update chat name if it's the first user message
-    if (activeChat && activeChat.messages.length === 2) { // 2 because it includes initial assistant message
-        try {
-          const { title } = await summarizeChat({ message: text });
-          setChats(prev => prev.map(chat => chat.id === activeChatId ? {...chat, name: title} : chat));
-        } catch (e) {
-            console.error("Failed to summarize chat title, using default.", e);
-            setChats(prev => prev.map(chat => chat.id === activeChatId ? {...chat, name: text.substring(0, 40)} : chat));
-        }
+    if (activeChat && activeChat.messages.length === 1 && activeChat.name === "New Chat") { 
+      try {
+        const { title } = await summarizeChat({ message: text });
+        setChats(prev => prev.map(chat => chat.id === activeChatId ? {...chat, name: title} : chat));
+      } catch (e) {
+          console.error("Failed to summarize chat title, using default.", e);
+          setChats(prev => prev.map(chat => chat.id === activeChatId ? {...chat, name: text.substring(0, 40)} : chat));
+      }
     }
+
 
     setUserInput("");
     setIsLoading(true);
@@ -383,7 +414,7 @@ export default function EmpathAIClient() {
                 <BrainCircuit className="h-8 w-8 text-primary" />
                 <h1 className="text-2xl font-bold font-headline">CounselAI</h1>
               </div>
-              <Button variant="ghost" size="icon" onClick={createNewChat}>
+              <Button variant="ghost" size="icon" onClick={() => createNewChat()}>
                   <Plus className="h-6 w-6"/>
                   <span className="sr-only">New Chat</span>
               </Button>
@@ -403,6 +434,28 @@ export default function EmpathAIClient() {
                             >
                             {chat.name}
                             </SidebarMenuButton>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <SidebarMenuAction showOnHover>
+                                        <Trash2/>
+                                    </SidebarMenuAction>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete your
+                                        chat history.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteChat(chat.id)}>
+                                        Continue
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </SidebarMenuItem>
                     ))}
                     </SidebarMenu>
