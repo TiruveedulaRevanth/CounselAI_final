@@ -65,6 +65,8 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        'user-bubble': 'hsl(var(--user-bubble))',
+        'assistant-bubble': 'hsl(var(--assistant-bubble))',
       },
       borderRadius: {
         lg: 'var(--radius)',
