@@ -585,7 +585,7 @@ export default function EmpathAIClient() {
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
                     <BrainLogo className="w-16 h-16 text-primary mb-4"/>
-                    <h2 className="text-2xl font-bold">{userName ? `Welcome back, ${userName}` : 'Ready when you are.'}</h2>
+                    <h2 className="text-2xl font-bold">{userName && (!activeChat || activeChat.messages.length === 0) ? `Welcome back, ${userName}`: 'Ready when you are.'}</h2>
                     <p className="text-muted-foreground mt-2">Start a new conversation by typing below or using the microphone.</p>
                 </div>
               )}
