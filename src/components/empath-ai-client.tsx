@@ -259,9 +259,7 @@ export default function EmpathAIClient() {
       };
       
       recognition.onend = () => {
-        if (isListening) {
-          setIsListening(false);
-        }
+        setIsListening(false);
       };
       
       recognition.onerror = (event: any) => {
@@ -284,7 +282,7 @@ export default function EmpathAIClient() {
 
       speechRecognition.current = recognition;
     }
-  }, [toast, isListening]);
+  }, [toast]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -294,12 +292,11 @@ export default function EmpathAIClient() {
     handleStopSpeaking();
     if (isListening) {
       speechRecognition.current?.stop();
-      setIsListening(false);
     } else {
        setUserInput("");
        speechRecognition.current?.start();
-       setIsListening(true);
     }
+    setIsListening(prev => !prev);
   };
 
   const handleSend = async (text: string) => {
@@ -512,17 +509,17 @@ export default function EmpathAIClient() {
           </main>
 
           <footer className="p-4 w-full">
-            <div className="relative flex items-center gap-2 max-w-2xl mx-auto">
+            <div className="flex items-end gap-2 max-w-2xl mx-auto bg-secondary rounded-2xl border-2 p-2">
               <Textarea
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask anything..."
-                className="flex-1 resize-none rounded-2xl border-2 bg-secondary text-base pr-28 pl-4 py-3"
+                className="flex-1 resize-none bg-transparent border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0"
                 rows={1}
                 disabled={isLoading || !activeChatId}
               />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              <div className="flex items-center gap-1">
                  {isSpeaking ? (
                     <Button
                     size="icon"
@@ -564,3 +561,5 @@ export default function EmpathAIClient() {
     </>
   );
 }
+
+    
