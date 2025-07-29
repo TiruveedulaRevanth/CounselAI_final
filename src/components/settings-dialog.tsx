@@ -37,18 +37,6 @@ interface SettingsDialogProps {
   children?: React.ReactNode;
 }
 
-const settingsSchema = z.object({
-  email: z.string().email({ message: "Invalid email address." }).refine(
-    (email) => email.endsWith("@gmail.com"),
-    {
-      message: "Please enter a valid Gmail address.",
-    }
-  ),
-  phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, { message: "Phone number must be in (123) 456-7890 format." }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters long." }),
-});
-
-
 export default function SettingsDialog({
   voices,
   selectedVoice,
@@ -58,15 +46,6 @@ export default function SettingsDialog({
   children,
 }: SettingsDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-
-  const form = useForm<z.infer<typeof settingsSchema>>({
-    resolver: zodResolver(settingsSchema),
-    defaultValues: {
-      email: "",
-      phone: "",
-      password: "",
-    },
-  });
   
   const handleVoiceChange = (value: string) => {
     const voice = voices.find(v => v.name === value) || null;
@@ -80,10 +59,6 @@ export default function SettingsDialog({
     }
   };
 
-  const onSubmit = (values: z.infer<typeof settingsSchema>) => {
-    console.log(values);
-    setIsOpen(false);
-  }
     
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -99,56 +74,10 @@ export default function SettingsDialog({
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
-            Customize your CounselAI experience and manage your account.
+            Customize your CounselAI experience.
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem className="grid grid-cols-4 items-center gap-4">
-                  <FormLabel className="text-right">Email</FormLabel>
-                  <div className="col-span-3">
-                    <FormControl>
-                      <Input placeholder="name@gmail.com" {...field} />
-                    </FormControl>
-                    <FormMessage className="mt-1" />
-                  </div>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem className="grid grid-cols-4 items-center gap-4">
-                  <FormLabel className="text-right">Phone</FormLabel>
-                   <div className="col-span-3">
-                      <FormControl>
-                        <Input placeholder="(123) 456-7890" {...field} />
-                      </FormControl>
-                      <FormMessage className="mt-1" />
-                  </div>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem className="grid grid-cols-4 items-center gap-4">
-                  <FormLabel className="text-right">Password</FormLabel>
-                   <div className="col-span-3">
-                      <FormControl>
-                        <Input type="password" {...field} />
-                      </FormControl>
-                      <FormMessage className="mt-1" />
-                  </div>
-                </FormItem>
-              )}
-            />
+        <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="voice" className="text-right">
                 AI Voice
@@ -189,11 +118,10 @@ export default function SettingsDialog({
                 </SelectContent>
               </Select>
             </div>
-            <DialogFooter>
-              <Button type="submit">Save & Close</Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        </div>
+        <DialogFooter>
+            <Button onClick={() => setIsOpen(false)}>Save & Close</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
