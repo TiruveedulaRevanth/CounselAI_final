@@ -291,81 +291,91 @@ export default function EmpathAIClient() {
 
   const handleSend = async (text: string) => {
     if (!text.trim() || isLoading || !activeChatId) return;
-
-    const currentChat = chats.find(c => c.id === activeChatId);
-    if (!currentChat) return;
-
-    const isFirstMessage = currentChat.messages.length === 0;
-
+  
+    const isFirstMessage = activeChat?.messages.length === 0;
+  
     const newUserMessage: Message = {
       id: Date.now().toString(),
       role: "user",
       content: text,
     };
-
-    // Create a new state for chats with the user's message added
-    const newChatsWithMessage = chats.map(chat =>
-      chat.id === activeChatId
-        ? { ...chat, messages: [...chat.messages, newUserMessage] }
-        : chat
-    );
-
-    setChats(newChatsWithMessage);
+  
+    // Add user message to state
+    updateMessages((prev) => [...prev, newUserMessage]);
+  
+    // Clear input and stop any recognition/speech
     setUserInput("");
     setIsLoading(true);
-    
-    // Stop any speech
     handleStopSpeaking();
     if (isListening) {
       speechRecognition.current?.stop();
       setIsListening(false);
     }
-    
-    // Generate title if it's the first message
-    if (isFirstMessage) {
-      try {
-        const { title } = await summarizeChat({ message: text });
-        setChats(prev => prev.map(chat => chat.id === activeChatId ? { ...chat, name: title } : chat));
-      } catch (e) {
-        console.error("Failed to summarize chat title, using default.", e);
-        // Fallback to using a snippet of the message as title
-        setChats(prev => prev.map(chat => chat.id === activeChatId ? { ...chat, name: text.substring(0, 40) + '...' } : chat));
-      }
-    }
-    
-    // Get AI response
+  
+    // Use a function to update state with the AI response
+    const addAiResponse = (response: string) => {
+      const newAssistantMessage: Message = {
+        id: Date.now().toString() + "-ai",
+        role: "assistant",
+        content: response,
+      };
+      updateMessages((prev) => [...prev, newAssistantMessage]);
+      speakText(response);
+    };
+  
+    // Use a function to update state with an error message
+    const addAiErrorResponse = () => {
+      const assistantErrorMessage: Message = {
+        id: Date.now().toString() + "-ai-error",
+        role: "assistant",
+        content: "I'm sorry, I seem to be having trouble connecting. Please try again in a moment.",
+      };
+      updateMessages((prev) => [...prev, assistantErrorMessage]);
+    };
+  
     try {
-      const result = await personalizeTherapyStyle({
-        therapyStyle: therapyStyle,
-        userInput: text,
-      });
-
-      if (result.response) {
-        const newAssistantMessage: Message = {
-          id: Date.now().toString() + "-ai",
-          role: "assistant",
-          content: result.response,
-        };
-        // Update messages again with the assistant's response
-        updateMessages((prev) => [...prev, newAssistantMessage]);
-        speakText(result.response);
+      // Generate title and AI response in parallel
+      const [titleResult, aiResult] = await Promise.allSettled([
+        isFirstMessage
+          ? summarizeChat({ message: text })
+          : Promise.resolve(null),
+        personalizeTherapyStyle({
+          therapyStyle: therapyStyle,
+          userInput: text,
+        }),
+      ]);
+  
+      // Update title if successful
+      if (titleResult.status === 'fulfilled' && titleResult.value) {
+        setChats(prev =>
+          prev.map(chat =>
+            chat.id === activeChatId ? { ...chat, name: titleResult.value.title } : chat
+          )
+        );
+      } else if (titleResult.status === 'rejected') {
+        console.error("Failed to summarize chat title, using default.", titleResult.reason);
+        // Fallback to using a snippet of the message as title
+        setChats(prev =>
+          prev.map(chat =>
+            chat.id === activeChatId ? { ...chat, name: text.substring(0, 40) + '...' } : chat
+          )
+        );
+      }
+  
+      // Handle AI response
+      if (aiResult.status === 'fulfilled' && aiResult.value.response) {
+        addAiResponse(aiResult.value.response);
       } else {
-        throw new Error("Received an empty response from the AI.");
+        throw new Error(aiResult.status === 'rejected' ? aiResult.reason : "Received an empty response from the AI.");
       }
     } catch (error) {
       console.error("Error calling AI:", error);
       toast({
         variant: "destructive",
         title: "AI Error",
-        description:
-          "Sorry, I encountered an error. Please try again.",
+        description: "Sorry, I encountered an error. Please try again.",
       });
-      const assistantErrorMessage: Message = {
-        id: Date.now().toString() + "-ai-error",
-        role: "assistant",
-        content: "I'm sorry, I seem to be having trouble connecting. Please try again in a moment.",
-      }
-      updateMessages((prev) => [...prev, assistantErrorMessage]);
+      addAiErrorResponse();
     } finally {
       setIsLoading(false);
     }
@@ -511,13 +521,13 @@ export default function EmpathAIClient() {
           </main>
 
           <footer className="p-4 w-full">
-            <div className="flex items-end gap-2 max-w-2xl mx-auto bg-card rounded-2xl border p-2">
-              <Textarea
+            <div className="flex items-end gap-2 max-w-2xl mx-auto bg-card rounded-2xl border p-2 shadow-sm">
+               <Textarea
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask anything..."
-                  className="flex-1 resize-none bg-transparent border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 pr-20"
+                  className="flex-1 resize-none bg-transparent border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0"
                   rows={1}
                   disabled={isLoading || !activeChatId}
               />
@@ -563,5 +573,3 @@ export default function EmpathAIClient() {
     </>
   );
 }
-
-    
