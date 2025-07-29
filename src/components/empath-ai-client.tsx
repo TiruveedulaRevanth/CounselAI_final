@@ -5,7 +5,7 @@ import { personalizeTherapyStyle } from "@/ai/flows/therapy-style-personalizatio
 import { summarizeChat } from "@/ai/flows/summarize-chat-flow";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { BrainCircuit, Mic, Plus, Send, Square, Trash2, Settings } from "lucide-react";
+import { Brain, Mic, Plus, Send, Square, Trash2, Settings } from "lucide-react";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import ChatMessage from "./chat-message";
 import SettingsDialog from "./settings-dialog";
@@ -441,7 +441,7 @@ export default function EmpathAIClient() {
         <SidebarHeader>
           <div className="flex items-center justify-between">
              <div className="flex items-center gap-2">
-                <BrainCircuit className="h-8 w-8 text-primary" />
+                <Brain className="h-8 w-8 text-primary" />
                 <h1 className="text-xl font-bold font-headline">CounselAI</h1>
               </div>
               <Button variant="ghost" size="icon" onClick={() => createNewChat()}>
@@ -534,7 +534,7 @@ export default function EmpathAIClient() {
                 </ScrollArea>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-                    <BrainCircuit className="w-16 h-16 text-primary mb-4"/>
+                    <Brain className="w-16 h-16 text-primary mb-4"/>
                     <h2 className="text-2xl font-bold">Ready when you are.</h2>
                     <p className="text-muted-foreground mt-2">Start a new conversation by typing below or using the microphone.</p>
                 </div>
