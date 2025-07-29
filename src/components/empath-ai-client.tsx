@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { BrainCircuit, Mic, Send, Square } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import ChatMessage from "./chat-message";
 import SettingsDialog from "./settings-dialog";
 import { Textarea } from "./ui/textarea";
@@ -77,7 +77,7 @@ export default function EmpathAIClient() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasSpokenInitialMessage = useRef(false);
 
-  const speakText = (text: string) => {
+  const speakText = useCallback((text: string) => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
       if (selectedVoice) {
@@ -91,7 +91,7 @@ export default function EmpathAIClient() {
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
     }
-  };
+  }, [selectedVoice]);
 
   const handleStopSpeaking = () => {
     if ('speechSynthesis' in window) {
@@ -124,7 +124,7 @@ export default function EmpathAIClient() {
 
       return () => clearInterval(voiceInterval);
     }
-  }, []); // Run only once
+  }, [messages, selectedVoice, speakText]);
 
   useEffect(() => {
     if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
@@ -148,7 +148,9 @@ export default function EmpathAIClient() {
       };
       
       recognition.onend = () => {
-        setIsListening(false);
+        if (isListening) {
+           setIsListening(false);
+        }
       };
       
       recognition.onerror = (event: any) => {
@@ -159,7 +161,7 @@ export default function EmpathAIClient() {
               title: "Speech Recognition Error",
               description: "Network error. Please check your connection and try again.",
             });
-        } else {
+        } else if (event.error !== 'no-speech') {
             toast({
               variant: "destructive",
               title: "Speech Recognition Error",
@@ -171,7 +173,7 @@ export default function EmpathAIClient() {
 
       speechRecognition.current = recognition;
     }
-  }, [toast]);
+  }, [toast, isListening]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -186,7 +188,6 @@ export default function EmpathAIClient() {
       }
     } else {
       speechRecognition.current?.start();
-      setUserInput("");
     }
     setIsListening(!isListening);
   };
@@ -203,6 +204,10 @@ export default function EmpathAIClient() {
     setUserInput("");
     setIsLoading(true);
     handleStopSpeaking();
+    setIsListening(false);
+    if(speechRecognition.current) {
+        speechRecognition.current.stop();
+    }
 
     try {
       const result = await personalizeTherapyStyle({
