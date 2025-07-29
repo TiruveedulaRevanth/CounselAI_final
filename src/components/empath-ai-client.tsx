@@ -291,25 +291,25 @@ export default function EmpathAIClient() {
 
   const handleSend = async (text: string) => {
     if (!text.trim() || isLoading || !activeChatId) return;
-
+  
     const currentChatId = activeChatId;
-
+    const isFirstMessage = (activeChat?.messages.length ?? 0) === 0;
+  
     const newUserMessage: Message = {
       id: Date.now().toString(),
       role: "user",
       content: text,
     };
-    
-    const isFirstMessage = (chats.find(c => c.id === currentChatId)?.messages.length ?? 0) === 0;
-
-    // Create a new list of chats with the new user message
-    const newChatsWithUserMessage = chats.map(chat =>
-      chat.id === currentChatId
-        ? { ...chat, messages: [...chat.messages, newUserMessage] }
-        : chat
+  
+    // Add user message to the UI immediately
+    setChats(prev =>
+      prev.map(chat =>
+        chat.id === currentChatId
+          ? { ...chat, messages: [...chat.messages, newUserMessage] }
+          : chat
+      )
     );
-
-    setChats(newChatsWithUserMessage);
+  
     setUserInput("");
     setIsLoading(true);
     handleStopSpeaking();
@@ -317,58 +317,58 @@ export default function EmpathAIClient() {
       speechRecognition.current?.stop();
       setIsListening(false);
     }
-    
+  
     try {
-      // Use a separate async function to handle AI interactions
-      const processAI = async () => {
-        // If it's the first message, generate title first
-        if (isFirstMessage) {
-            try {
-                const titleResult = await summarizeChat({ message: text });
-                if (titleResult.title) {
-                    setChats(prev =>
-                        prev.map(chat =>
-                            chat.id === currentChatId ? { ...chat, name: titleResult.title } : chat
-                        )
-                    );
-                }
-            } catch (titleError) {
-                 console.error("Failed to summarize chat title, using default.", titleError);
-                 setChats(prev =>
-                    prev.map(chat =>
-                        chat.id === currentChatId ? { ...chat, name: text.substring(0, 40) + '...' } : chat
-                    )
-                 );
-            }
-        }
-
-        // Then get the AI response
-        const aiResult = await personalizeTherapyStyle({
-            therapyStyle: therapyStyle,
-            userInput: text,
-        });
-
-        if (aiResult.response) {
-            const newAssistantMessage: Message = {
-                id: Date.now().toString() + "-ai",
-                role: "assistant",
-                content: aiResult.response,
-            };
-            setChats(prevChats =>
-                prevChats.map(chat =>
-                    chat.id === currentChatId
-                        ? { ...chat, messages: [...chat.messages, newAssistantMessage] }
-                        : chat
-                )
+      // Title generation for the first message
+      if (isFirstMessage) {
+        try {
+          const titleResult = await summarizeChat({ message: text });
+          if (titleResult.title) {
+            setChats(prev =>
+              prev.map(chat =>
+                chat.id === currentChatId
+                  ? { ...chat, name: titleResult.title }
+                  : chat
+              )
             );
-            speakText(aiResult.response);
-        } else {
-            throw new Error("Received an empty response from the AI.");
+          }
+        } catch (titleError) {
+          console.error("Failed to summarize chat title, using default.", titleError);
+          setChats(prev =>
+            prev.map(chat =>
+              chat.id === currentChatId
+                ? { ...chat, name: text.substring(0, 40) + '...' }
+                : chat
+            )
+          );
         }
-      };
-
-      await processAI();
-
+      }
+  
+      // AI response generation
+      const aiResult = await personalizeTherapyStyle({
+        therapyStyle: therapyStyle,
+        userInput: text,
+      });
+  
+      if (aiResult.response) {
+        const newAssistantMessage: Message = {
+          id: Date.now().toString() + "-ai",
+          role: "assistant",
+          content: aiResult.response,
+        };
+        
+        // Add AI response to the UI
+        setChats(prev =>
+          prev.map(chat =>
+            chat.id === currentChatId
+              ? { ...chat, messages: [...chat.messages, newAssistantMessage] }
+              : chat
+          )
+        );
+        speakText(aiResult.response);
+      } else {
+        throw new Error("Received an empty response from the AI.");
+      }
     } catch (error) {
       console.error("Error calling AI:", error);
       toast({
@@ -381,8 +381,10 @@ export default function EmpathAIClient() {
         role: "assistant",
         content: "I'm sorry, I seem to be having trouble connecting. Please try again in a moment.",
       };
-      setChats(prevChats =>
-        prevChats.map(chat =>
+      
+      // Add error message to the UI
+      setChats(prev =>
+        prev.map(chat =>
           chat.id === currentChatId
             ? { ...chat, messages: [...chat.messages, assistantErrorMessage] }
             : chat
@@ -391,7 +393,7 @@ export default function EmpathAIClient() {
     } finally {
       setIsLoading(false);
     }
-  };
+  };  
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
