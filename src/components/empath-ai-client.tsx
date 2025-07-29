@@ -1,11 +1,12 @@
 
+
 "use client";
 
 import { personalizeTherapyStyle } from "@/ai/flows/therapy-style-personalization";
 import { summarizeChat } from "@/ai/flows/summarize-chat-flow";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Mic, Plus, Send, Square, Trash2, Settings } from "lucide-react";
+import { Mic, Plus, Send, Square, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import ChatMessage from "./chat-message";
 import SettingsDialog from "./settings-dialog";
@@ -92,6 +93,8 @@ export default function EmpathAIClient() {
   const { toast } = useToast();
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
 
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -106,8 +109,23 @@ export default function EmpathAIClient() {
   const speechRecognition = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+      const signedIn = localStorage.getItem("counselai-signed-in") === "true";
+      setIsSignedIn(signedIn);
+      if (!signedIn) {
+          setIsSignUpOpen(true);
+      }
+  }, []);
+
+  const handleSignUpSuccess = () => {
+    localStorage.setItem("counselai-signed-in", "true");
+    setIsSignedIn(true);
+    setIsSignUpOpen(false);
+  }
+
   // Load chats from local storage on initial render
   useEffect(() => {
+    if (!isSignedIn) return;
     try {
       const savedChats = localStorage.getItem("counselai-chats");
       if (savedChats) {
@@ -128,16 +146,16 @@ export default function EmpathAIClient() {
       createNewChat();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isSignedIn]);
 
   // Save chats to local storage whenever they change
   useEffect(() => {
-    if (chats.length > 0) {
+    if (isSignedIn && chats.length > 0) {
       localStorage.setItem("counselai-chats", JSON.stringify(chats));
-    } else {
+    } else if (isSignedIn) {
       localStorage.removeItem("counselai-chats");
     }
-  }, [chats]);
+  }, [chats, isSignedIn]);
   
   const createNewChat = useCallback(() => {
     const newChat: Chat = {
@@ -438,6 +456,16 @@ export default function EmpathAIClient() {
 
   return (
     <>
+       <SettingsDialog
+          voices={voices}
+          selectedVoice={selectedVoice}
+          setSelectedVoice={setSelectedVoice}
+          therapyStyle={therapyStyle}
+          setTherapyStyle={setTherapyStyle}
+          isSignUpOpen={isSignUpOpen}
+          setIsSignUpOpen={setIsSignUpOpen}
+          onSignUpSuccess={handleSignUpSuccess}
+        />
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center justify-between">
@@ -445,7 +473,7 @@ export default function EmpathAIClient() {
                 <BrainLogo className="h-8 w-8 text-primary" />
                 <h1 className="text-xl font-bold font-headline">CounselAI</h1>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => createNewChat()}>
+              <Button variant="ghost" size="icon" onClick={() => createNewChat()} disabled={!isSignedIn}>
                   <Plus className="h-6 w-6"/>
                   <span className="sr-only">New Chat</span>
               </Button>
@@ -504,18 +532,6 @@ export default function EmpathAIClient() {
               <h1 className="text-xl font-bold font-headline">CounselAI</h1>
             </div>
             <div className="flex items-center gap-2">
-                <SettingsDialog
-                  voices={voices}
-                  selectedVoice={selectedVoice}
-                  setSelectedVoice={setSelectedVoice}
-                  therapyStyle={therapyStyle}
-                  setTherapyStyle={setTherapyStyle}
-                >
-                  <Button variant="ghost" size="icon">
-                    <Settings className="h-5 w-5" />
-                    <span className="sr-only">Settings</span>
-                  </Button>
-                </SettingsDialog>
             </div>
           </header>
 

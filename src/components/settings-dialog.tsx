@@ -9,7 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Settings } from "lucide-react";
 import { useState } from "react";
 import { therapyStyles } from "./empath-ai-client";
 import { Input } from "./ui/input";
@@ -27,6 +25,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
+import { useToast } from "@/hooks/use-toast";
 
 interface SettingsDialogProps {
   voices: SpeechSynthesisVoice[];
@@ -34,8 +33,21 @@ interface SettingsDialogProps {
   setSelectedVoice: (voice: SpeechSynthesisVoice | null) => void;
   therapyStyle: string;
   setTherapyStyle: (style: string) => void;
-  children?: React.ReactNode;
+  isSignUpOpen: boolean;
+  setIsSignUpOpen: (isOpen: boolean) => void;
+  onSignUpSuccess: () => void;
 }
+
+const formSchema = z.object({
+    email: z.string().email("Invalid email address").refine(val => val.endsWith('@gmail.com'), {
+        message: "Only Gmail addresses are allowed",
+    }),
+    phone: z.string().regex(/^[6-9]\d{9}$/, {
+        message: "Phone number must be a valid 10-digit Indian number.",
+    }),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
 
 export default function SettingsDialog({
   voices,
@@ -43,10 +55,29 @@ export default function SettingsDialog({
   setSelectedVoice,
   therapyStyle,
   setTherapyStyle,
-  children,
+  isSignUpOpen,
+  setIsSignUpOpen,
+  onSignUpSuccess,
 }: SettingsDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  
+  const { toast } = useToast();
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      phone: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log("Sign up successful with:", values);
+    toast({
+        title: "Sign Up Successful",
+        description: "You can now start using CounselAI.",
+    });
+    onSignUpSuccess();
+  };
+
   const handleVoiceChange = (value: string) => {
     const voice = voices.find(v => v.name === value) || null;
     setSelectedVoice(voice);
@@ -61,67 +92,62 @@ export default function SettingsDialog({
 
     
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children || (
-          <Button variant="outline" className="w-full justify-start gap-2">
-            <Settings className="h-5 w-5" />
-            <span>Settings</span>
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isSignUpOpen} onOpenChange={setIsSignUpOpen}>
+      <DialogContent className="sm:max-w-[425px]" hideCloseButton={true}>
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>Welcome to CounselAI</DialogTitle>
           <DialogDescription>
-            Customize your CounselAI experience.
+            Please create an account to get started.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="voice" className="text-right">
-                AI Voice
-              </Label>
-              <Select
-                onValueChange={handleVoiceChange}
-                value={selectedVoice?.name}
-              >
-                <SelectTrigger id="voice" className="col-span-3">
-                  <SelectValue placeholder="Select a voice" />
-                </SelectTrigger>
-                <SelectContent>
-                  {voices.length > 0 ? voices.map((voice) => (
-                    <SelectItem key={voice.name} value={voice.name}>
-                      {voice.name} ({voice.lang})
-                    </SelectItem>
-                  )) : <SelectItem value="loading" disabled>Loading voices...</SelectItem>}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="therapy-style" className="text-right">
-                Therapy Style
-              </Label>
-              <Select
-                onValueChange={handleTherapyStyleChange}
-                value={therapyStyle}
-              >
-                <SelectTrigger id="therapy-style" className="col-span-3">
-                  <SelectValue placeholder="Select a style" />
-                </SelectTrigger>
-                <SelectContent>
-                  {therapyStyles.map((style) => (
-                    <SelectItem key={style.name} value={style.prompt}>
-                      {style.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-        </div>
-        <DialogFooter>
-            <Button onClick={() => setIsOpen(false)}>Save & Close</Button>
-        </DialogFooter>
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+                 <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                        <FormItem className="grid grid-cols-4 items-center gap-4">
+                            <FormLabel className="text-right">Email</FormLabel>
+                            <FormControl className="col-span-3">
+                                <Input placeholder="user@gmail.com" {...field} />
+                            </FormControl>
+                            <FormMessage className="col-span-4 text-right" />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                        <FormItem className="grid grid-cols-4 items-center gap-4">
+                            <FormLabel className="text-right">Phone</FormLabel>
+                            <FormControl className="col-span-3">
+                                <Input placeholder="10-digit number" {...field} />
+                            </FormControl>
+                            <FormMessage className="col-span-4 text-right" />
+                        </FormItem>
+                    )}
+                />
+
+                 <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                        <FormItem className="grid grid-cols-4 items-center gap-4">
+                            <FormLabel className="text-right">Password</FormLabel>
+                            <FormControl className="col-span-3">
+                                <Input type="password" {...field} />
+                            </FormControl>
+                            <FormMessage className="col-span-4 text-right" />
+                        </FormItem>
+                    )}
+                />
+                
+                <DialogFooter>
+                    <Button type="submit">Sign Up</Button>
+                </DialogFooter>
+            </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
