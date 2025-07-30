@@ -13,21 +13,29 @@ export const BrainLogo = ({ className }: { className?: string }) => (
     className={className}
   >
     <defs>
-      <linearGradient id="spark-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style={{ stopColor: '#833ab4', stopOpacity: 1 }} />
-        <stop offset="50%" style={{ stopColor: '#fd1d1d', stopOpacity: 1 }} />
-        <stop offset="100%" style={{ stopColor: '#fcb045', stopOpacity: 1 }} />
+      <linearGradient id="leaf-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#4ade80', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
       </linearGradient>
     </defs>
     
-    {/* The two "supportive hands" shapes */}
-    <path d="M4 12C4 7.58172 7.58172 4 12 4C13.8236 4 15.4802 4.63385 16.8284 5.67157" className="text-primary"/>
-    <path d="M20 12C20 16.4183 16.4183 20 12 20C10.1764 20 8.51984 19.3661 7.17157 18.3284" className="text-primary" />
+    {/* Brain Outline */}
+    <path 
+      d="M12 21a8.5 8.5 0 1 0-8.5-8.5c0 2.26.8 4.33 2.5 5.5" 
+      className="text-primary" 
+    />
+    <path 
+      d="M12 21a8.5 8.5 0 1 1 8.5-8.5c0 2.26-.8 4.33-2.5 5.5" 
+      className="text-primary" 
+    />
+    <path d="M15.5 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" className="text-primary" />
+    <path d="M12 12m-2 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0" className="text-primary" />
+    <path d="M12 12v-2a2 2 0 0 1 2-2" className="text-primary" />
 
-    {/* The central "spark" with the gradient */}
-    <g stroke="url(#spark-gradient)">
-      <path d="M12 10V14" />
-      <path d="M10 12H14" />
+    {/* Growing Leaf */}
+    <g stroke="url(#leaf-gradient)">
+      <path d="M12 10C12 7 14 5 16 5" />
+      <path d="M12 10c0 2.5-2 4.5-2 4.5s-2-2-2-4.5c0-2.5 2-4.5 2-4.5S12 7.5 12 10z" />
     </g>
   </svg>
 );
