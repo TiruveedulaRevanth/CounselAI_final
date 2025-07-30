@@ -450,7 +450,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
         <SidebarHeader>
           <div className="flex items-center justify-between">
              <div className="flex items-center gap-2">
-                <BrainLogo className="h-8 w-8 text-foreground" />
+                <BrainLogo className="h-8 w-8" />
                 <h1 className="text-xl font-bold font-headline">CounselAI</h1>
               </div>
               <Button variant="ghost" size="icon" onClick={() => createNewChat()}>
@@ -459,7 +459,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
               </Button>
           </div>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="flex-1">
             {groupedChats.map(([groupName, groupChats]) => (
                 <SidebarGroup key={groupName}>
                     <SidebarGroupLabel>{groupName}</SidebarGroupLabel>
@@ -538,7 +538,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                 </ScrollArea>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-                    <BrainLogo className="w-16 h-16 text-primary mb-4"/>
+                    <BrainLogo className="w-16 h-16 text-primary"/>
                     <h2 className="text-2xl font-bold">{userName && (!activeChat || activeChat.messages.length === 0) ? `Welcome back, ${userName}`: 'Ready when you are.'}</h2>
                     <p className="text-muted-foreground mt-2">Start a new conversation by typing below or using the microphone.</p>
                 </div>
