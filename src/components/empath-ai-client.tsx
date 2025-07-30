@@ -460,7 +460,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
           </div>
         </SidebarHeader>
         <SidebarContent className="flex-1">
-            <ScrollArea className="h-full">
+          <ScrollArea className="h-full">
                 {groupedChats.map(([groupName, groupChats]) => (
                     <SidebarGroup key={groupName}>
                         <SidebarGroupLabel>{groupName}</SidebarGroupLabel>
@@ -505,7 +505,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <div className="flex flex-col h-screen bg-background font-body text-foreground">
+        <div className="flex flex-col h-full bg-background font-body text-foreground">
           <header className="flex items-center justify-between p-4 border-b shrink-0">
             <div className="flex items-center gap-2">
               <SidebarTrigger />
@@ -600,3 +600,5 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
     </>
   );
 }
+
+    
