@@ -43,7 +43,7 @@ body {
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-ring: 122 47% 49%;
     
-    --user-bubble: 275 93% 36%; /* Vibrant Purple */
+    --user-bubble: 275 93% 42%; /* Vibrant Purple */
     --assistant-bubble: 240 4.8% 95.9%;
   }
   .dark {
