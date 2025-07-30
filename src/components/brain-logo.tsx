@@ -21,8 +21,8 @@ export const BrainLogo = ({ className }: { className?: string }) => (
     />
     <path
       d="M256 96c-13.3 0-24 10.7-24 24v32c0 13.3 10.7 24 24 24s24-10.7 24-24v-32c0-13.3-10.7-24-24-24zm-64 128c-13.3 0-24 10.7-24 24v32c0 13.3 10.7 24 24 24s24-10.7 24-24v-32c0-13.3-10.7-24-24-24zm128 0c-13.3 0-24 10.7-24 24v32c0 13.3 10.7 24 24 24s24-10.7 24-24v-32c0-13.3-10.7-24-24-24zM160 320c-13.3 0-24 10.7-24 24v32c0 13.3 10.7 24 24 24s24-10.7 24-24v-32c0-13.3-10.7-24-24-24zm192 0c-13.3 0-24 10.7-24 24v32c0 13.3 10.7 24 24 24s24-10.7 24-24v-32c0-13.3-10.7-24-24-24z"
-      fill="white"
-      stroke="white"
+      fill="black"
+      stroke="black"
       strokeWidth="10"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -31,7 +31,7 @@ export const BrainLogo = ({ className }: { className?: string }) => (
     <path 
       d="M256,176v160m-64-80h128"
       fill="none"
-      stroke="white"
+      stroke="black"
       strokeWidth="16"
       strokeLinecap="round"
     />
