@@ -67,14 +67,14 @@ body {
     --input: 217 33% 17%;
     --ring: 215 20% 65%;
 
-    --sidebar-background: 220 5% 78%; /* #c3c5c9 */
-    --sidebar-foreground: 240 10% 3.9%;
-    --sidebar-border: 220 5% 70%;
-    --sidebar-primary: 122 47% 49%;
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-background: 228 9% 17%; /* Carpathian Grey */
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-primary: 158 89% 62%;
+    --sidebar-primary-foreground: 222 47% 11%;
     --sidebar-accent: 0 100% 60%; /* Brighter Red */
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-ring: 122 47% 49%;
+    --sidebar-ring: 215 20% 65%;
 
     --user-bubble: 145 63% 42%;
     --assistant-bubble: 217 91% 60%;
