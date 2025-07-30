@@ -21,7 +21,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenuAction,
@@ -521,16 +520,6 @@ export default function EmpathAIClient() {
                 </SidebarGroup>
             ))}
         </SidebarContent>
-        <SidebarFooter>
-           {isSignedIn && (
-            <div className="p-2">
-                <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4" />
-                    <span>Sign Out</span>
-                </Button>
-            </div>
-           )}
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col h-screen bg-background font-body text-foreground">
@@ -541,10 +530,16 @@ export default function EmpathAIClient() {
             </div>
             <div className="flex items-center gap-2">
                {isSignedIn && (
-                <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
-                    <Settings className="h-5 w-5" />
-                    <span className="sr-only">Settings</span>
-                </Button>
+                <>
+                  <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
+                      <Settings className="h-5 w-5" />
+                      <span className="sr-only">Settings</span>
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                      <LogOut className="h-5 w-5" />
+                      <span className="sr-only">Sign Out</span>
+                  </Button>
+                </>
               )}
             </div>
           </header>
