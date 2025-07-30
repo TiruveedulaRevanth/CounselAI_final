@@ -2,15 +2,17 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { Bot, User } from "lucide-react";
+import { Bot, User, Volume2 } from "lucide-react";
 import type { Message } from "./empath-ai-client";
+import { Button } from "./ui/button";
 
 interface ChatMessageProps {
   message: Message;
   isInterim?: boolean;
+  onSpeak?: (text: string) => void;
 }
 
-export default function ChatMessage({ message, isInterim = false }: ChatMessageProps) {
+export default function ChatMessage({ message, isInterim = false, onSpeak }: ChatMessageProps) {
   const isAssistant = message.role === "assistant";
 
   return (
@@ -36,6 +38,17 @@ export default function ChatMessage({ message, isInterim = false }: ChatMessageP
         )}>
             {message.content}
         </div>
+         {isAssistant && onSpeak && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mt-2 h-7 w-7 text-muted-foreground"
+              onClick={() => onSpeak(message.content)}
+            >
+              <Volume2 className="h-4 w-4" />
+              <span className="sr-only">Speak</span>
+            </Button>
+          )}
       </div>
        {!isAssistant && (
          <Avatar className="h-8 w-8">
