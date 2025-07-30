@@ -43,7 +43,7 @@ body {
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-ring: 122 47% 49%;
     
-    --user-bubble: 250 90% 90%; /* Lavender */
+    --user-bubble: 275 93% 36%; /* Vibrant Purple */
     --assistant-bubble: 240 4.8% 95.9%;
   }
   .dark {
@@ -76,7 +76,7 @@ body {
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-ring: 215 20% 65%;
 
-    --user-bubble: 250 30% 30%; /* Dark Lavender */
+    --user-bubble: 275 93% 42%; /* Vibrant Purple */
     --assistant-bubble: 217 33% 17%;
   }
 }
