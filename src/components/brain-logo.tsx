@@ -27,14 +27,6 @@ export const BrainLogo = ({ className }: { className?: string }) => (
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-        <animateTransform
-            attributeName="transform"
-            type="rotate"
-            from="0 256 256"
-            to="360 256 256"
-            dur="20s"
-            repeatCount="indefinite"
-        />
     </path>
     <path 
       d="M256,176v160m-64-80h128"
