@@ -1,11 +1,12 @@
 
 import React from 'react';
+import { cn } from "@/lib/utils";
 
 export const BrainLogo = ({ className }: { className?: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
-    className={cn("text-foreground", className)}
+    className={cn(className)}
     fill="url(#brain-gradient)"
   >
     <defs>
@@ -21,8 +22,8 @@ export const BrainLogo = ({ className }: { className?: string }) => (
     />
     <path
       d="M256 96c-13.3 0-24 10.7-24 24v32c0 13.3 10.7 24 24 24s24-10.7 24-24v-32c0-13.3-10.7-24-24-24zm-64 128c-13.3 0-24 10.7-24 24v32c0 13.3 10.7 24 24 24s24-10.7 24-24v-32c0-13.3-10.7-24-24-24zm128 0c-13.3 0-24 10.7-24 24v32c0 13.3 10.7 24 24 24s24-10.7 24-24v-32c0-13.3-10.7-24-24-24zM160 320c-13.3 0-24 10.7-24 24v32c0 13.3 10.7 24 24 24s24-10.7 24-24v-32c0-13.3-10.7-24-24-24zm192 0c-13.3 0-24 10.7-24 24v32c0 13.3 10.7 24 24 24s24-10.7 24-24v-32c0-13.3-10.7-24-24-24z"
-      fill="currentColor"
-      stroke="currentColor"
+      fill="url(#brain-gradient)"
+      stroke="url(#brain-gradient)"
       strokeWidth="10"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -31,13 +32,9 @@ export const BrainLogo = ({ className }: { className?: string }) => (
     <path 
       d="M256,176v160m-64-80h128"
       fill="none"
-      stroke="currentColor"
+      stroke="url(#brain-gradient)"
       strokeWidth="16"
       strokeLinecap="round"
     />
   </svg>
 );
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
