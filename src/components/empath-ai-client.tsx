@@ -37,6 +37,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { BrainLogo } from "./brain-logo";
+import { ThemeToggle } from "./theme-toggle";
 
 declare global {
   interface Window {
@@ -510,6 +511,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
               <h1 className="text-xl font-bold font-headline">CounselAI</h1>
             </div>
             <div className="flex items-center gap-2">
+                <ThemeToggle />
                 <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
                     <Settings className="h-5 w-5" />
                     <span className="sr-only">Settings</span>
