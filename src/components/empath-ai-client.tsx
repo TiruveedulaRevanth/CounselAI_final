@@ -460,46 +460,48 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
           </div>
         </SidebarHeader>
         <SidebarContent className="flex-1">
-            {groupedChats.map(([groupName, groupChats]) => (
-                <SidebarGroup key={groupName}>
-                    <SidebarGroupLabel>{groupName}</SidebarGroupLabel>
-                    <SidebarMenu>
-                    {groupChats.map(chat => (
-                        <SidebarMenuItem key={chat.id}>
-                            <SidebarMenuButton 
-                            onClick={() => setActiveChatId(chat.id)}
-                            isActive={chat.id === activeChatId}
-                            className="truncate"
-                            >
-                            {chat.name}
-                            </SidebarMenuButton>
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <SidebarMenuAction showOnHover>
-                                        <Trash2/>
-                                    </SidebarMenuAction>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete your
-                                        chat history.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteChat(chat.id)}>
-                                        Continue
-                                    </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </SidebarMenuItem>
-                    ))}
-                    </SidebarMenu>
-                </SidebarGroup>
-            ))}
+            <ScrollArea className="h-full">
+                {groupedChats.map(([groupName, groupChats]) => (
+                    <SidebarGroup key={groupName}>
+                        <SidebarGroupLabel>{groupName}</SidebarGroupLabel>
+                        <SidebarMenu>
+                        {groupChats.map(chat => (
+                            <SidebarMenuItem key={chat.id}>
+                                <SidebarMenuButton 
+                                onClick={() => setActiveChatId(chat.id)}
+                                isActive={chat.id === activeChatId}
+                                className="truncate"
+                                >
+                                {chat.name}
+                                </SidebarMenuButton>
+                                 <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <SidebarMenuAction showOnHover>
+                                            <Trash2/>
+                                        </SidebarMenuAction>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete your
+                                            chat history.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDeleteChat(chat.id)}>
+                                            Continue
+                                        </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </SidebarMenuItem>
+                        ))}
+                        </SidebarMenu>
+                    </SidebarGroup>
+                ))}
+            </ScrollArea>
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
@@ -522,9 +524,9 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
             </div>
           </header>
 
-          <main className="flex-1 flex flex-col overflow-y-hidden">
+          <main className="flex-1 flex flex-col overflow-hidden">
              {activeChat && activeChat.messages.length > 0 ? (
-                <ScrollArea className="flex-grow">
+                <ScrollArea className="flex-grow h-0">
                   <div className="space-y-6 p-4 md:p-6 lg:p-8 max-w-4xl mx-auto w-full">
                     {activeChat?.messages.map((msg) => (
                       <ChatMessage key={msg.id} message={msg} onSpeak={speakText} userName={userName} />
@@ -599,3 +601,4 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
   );
 }
 
+    
