@@ -506,7 +506,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col h-screen bg-background font-body text-foreground">
-          <header className="flex items-center justify-between p-4 border-b">
+          <header className="flex items-center justify-between p-4 border-b shrink-0">
             <div className="flex items-center gap-2">
               <SidebarTrigger />
               <h1 className="text-xl font-bold font-headline">CounselAI</h1>
@@ -524,9 +524,9 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
             </div>
           </header>
 
-          <main className="flex-1 flex flex-col overflow-hidden">
+          <main className="flex-1 min-h-0">
              {activeChat && activeChat.messages.length > 0 ? (
-                <ScrollArea className="flex-grow h-0">
+                <ScrollArea className="h-full">
                   <div className="space-y-6 p-4 md:p-6 lg:p-8 max-w-4xl mx-auto w-full">
                     {activeChat?.messages.map((msg) => (
                       <ChatMessage key={msg.id} message={msg} onSpeak={speakText} userName={userName} />
@@ -539,7 +539,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                   </div>
                 </ScrollArea>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-4 h-full">
                     <BrainLogo className="w-16 h-16 text-primary"/>
                     <h2 className="text-2xl font-bold">{userName && (!activeChat || activeChat.messages.length === 0) ? `Welcome back, ${userName}`: 'Ready when you are.'}</h2>
                     <p className="text-muted-foreground mt-2">Start a new conversation by typing below or using the microphone.</p>
@@ -547,7 +547,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
               )}
           </main>
 
-          <footer className="p-4 w-full">
+          <footer className="p-4 w-full shrink-0">
             <div className="relative flex items-end gap-2 max-w-2xl mx-auto bg-card rounded-2xl border p-2 shadow-sm">
                <Textarea
                   value={userInput}
