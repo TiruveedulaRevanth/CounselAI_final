@@ -39,6 +39,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { BrainLogo } from "./brain-logo";
+import AuthPage from "./auth-page";
 
 
 declare global {
@@ -95,7 +96,6 @@ export default function EmpathAIClient() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
-  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 
@@ -117,17 +117,13 @@ export default function EmpathAIClient() {
       const name = localStorage.getItem("counselai-user-name");
       setIsSignedIn(signedIn);
       setUserName(name);
-      if (!signedIn) {
-          setIsSignUpOpen(true);
-      }
   }, []);
 
-  const handleSignUpSuccess = (name: string) => {
+  const handleSignInSuccess = (name: string) => {
     localStorage.setItem("counselai-signed-in", "true");
     localStorage.setItem("counselai-user-name", name);
     setIsSignedIn(true);
     setUserName(name);
-    setIsSignUpOpen(false);
   }
 
   const handleSignOut = () => {
@@ -137,7 +133,6 @@ export default function EmpathAIClient() {
     setUserName(null);
     setChats([]);
     setActiveChatId(null);
-    setIsSignUpOpen(true);
   }
 
   // Load chats from local storage on initial render
@@ -209,16 +204,6 @@ export default function EmpathAIClient() {
 
   const activeChat = useMemo(() => chats.find(chat => chat.id === activeChatId), [chats, activeChatId]);
 
-  const updateMessages = (updater: (prevMessages: Message[]) => Message[]) => {
-    setChats(prevChats =>
-      prevChats.map(chat =>
-        chat.id === activeChatId
-          ? { ...chat, messages: updater(chat.messages) }
-          : chat
-      )
-    );
-  };
-  
   const speakText = useCallback((text: string) => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
@@ -337,7 +322,6 @@ export default function EmpathAIClient() {
       content: text,
     };
   
-    // Use a callback with setChats to get the most up-to-date state
     setChats(prev =>
       prev.map(chat =>
         chat.id === currentChatId
@@ -355,7 +339,6 @@ export default function EmpathAIClient() {
     }
   
     try {
-      // Title generation for the first message
       if (isFirstMessage) {
         try {
           const titleResult = await summarizeChat({ message: text });
@@ -380,7 +363,6 @@ export default function EmpathAIClient() {
         }
       }
   
-      // AI response generation
       const aiResult = await personalizeTherapyStyle({
         therapyStyle: therapyStyle,
         userInput: text,
@@ -393,7 +375,6 @@ export default function EmpathAIClient() {
           content: aiResult.response,
         };
         
-        // Add AI response to the UI
         setChats(prev =>
           prev.map(chat =>
             chat.id === currentChatId
@@ -418,7 +399,6 @@ export default function EmpathAIClient() {
         content: "I'm sorry, I seem to be having trouble connecting. Please try again in a moment.",
       };
       
-      // Add error message to the UI
       setChats(prev =>
         prev.map(chat =>
           chat.id === currentChatId
@@ -471,6 +451,10 @@ export default function EmpathAIClient() {
     return [...Object.entries(groups), ...olderEntries].filter(([, chats]) => chats.length > 0);
   }, [chats]);
 
+  if (!isSignedIn) {
+    return <AuthPage onSignInSuccess={handleSignInSuccess} />;
+  }
+
   return (
     <>
        <SettingsDialog
@@ -479,9 +463,6 @@ export default function EmpathAIClient() {
           setSelectedVoice={setSelectedVoice}
           therapyStyle={therapyStyle}
           setTherapyStyle={setTherapyStyle}
-          isSignUpOpen={isSignUpOpen}
-          setIsSignUpOpen={setIsSignUpOpen}
-          onSignUpSuccess={handleSignUpSuccess}
           isSettingsOpen={isSettingsOpen}
           setIsSettingsOpen={setIsSettingsOpen}
         />
