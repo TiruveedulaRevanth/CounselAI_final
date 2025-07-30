@@ -44,7 +44,7 @@ body {
     --sidebar-ring: 122 47% 49%;
     
     --user-bubble: 250 80% 60%;
-    --assistant-bubble: 217 91% 60%;
+    --assistant-bubble: 240 4.8% 95.9%;
   }
   .dark {
     --background: 228 9% 10%;
@@ -77,7 +77,7 @@ body {
     --sidebar-ring: 215 20% 65%;
 
     --user-bubble: 250 80% 60%;
-    --assistant-bubble: 217 91% 60%;
+    --assistant-bubble: 217 33% 17%;
   }
 }
 
