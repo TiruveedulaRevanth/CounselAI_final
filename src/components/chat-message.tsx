@@ -2,9 +2,10 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { Bot, User, Volume2 } from "lucide-react";
+import { User, Volume2 } from "lucide-react";
 import type { Message } from "./empath-ai-client";
 import { Button } from "./ui/button";
+import { BrainLogo } from "./brain-logo";
 
 interface ChatMessageProps {
   message: Message;
@@ -25,8 +26,8 @@ export default function ChatMessage({ message, isInterim = false, onSpeak }: Cha
     >
       {isAssistant && (
          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary text-primary-foreground">
-                <Bot size={20} />
+            <AvatarFallback className="bg-transparent">
+                <BrainLogo />
             </AvatarFallback>
         </Avatar>
       )}
@@ -64,8 +65,8 @@ export default function ChatMessage({ message, isInterim = false, onSpeak }: Cha
 const Loading = () => (
     <div className="flex items-start gap-4 w-full">
         <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary text-primary-foreground">
-                <Bot size={20} />
+            <AvatarFallback className="bg-transparent">
+                <BrainLogo />
             </AvatarFallback>
         </Avatar>
         <div className="flex-1">
