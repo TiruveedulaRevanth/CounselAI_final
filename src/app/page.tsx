@@ -6,7 +6,7 @@ import AuthPage from "@/components/auth-page";
 import AppLayout from "@/components/app-layout";
 
 export default function Home() {
-  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null); // Start with null
   const [userName, setUserName] = useState<string | null>(null);
   
   // This effect will run once on the client to check local storage.
@@ -31,9 +31,9 @@ export default function Home() {
     setUserName(null);
   }
 
-  // We need to wait for the client-side check to complete
-  // to avoid a flash of the wrong component.
-  if (typeof window === 'undefined') {
+  // Render nothing until the client-side check is complete.
+  // This ensures server and client render the same initial null.
+  if (isSignedIn === null) {
     return null; // Or a loading spinner
   }
 
