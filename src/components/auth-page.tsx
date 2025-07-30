@@ -100,6 +100,10 @@ export default function AuthPage({ onSignInSuccess }: AuthPageProps) {
         });
         onSignInSuccess(name);
     } catch (error: any) {
+        if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
+            console.log("Google Sign-In cancelled by user.");
+            return;
+        }
         console.error("Google Sign-In Error:", error);
         toast({
             variant: "destructive",
