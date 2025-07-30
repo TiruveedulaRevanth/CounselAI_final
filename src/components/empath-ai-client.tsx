@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { personalizeTherapyStyle } from "@/ai/flows/therapy-style-personalization";
@@ -38,8 +37,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { BrainLogo } from "./brain-logo";
-import AuthPage from "./auth-page";
-
 
 declare global {
   interface Window {
@@ -89,12 +86,17 @@ export const therapyStyles = [
   },
 ];
 
-export default function EmpathAIClient() {
+
+interface EmpathAIClientProps {
+    userName: string | null;
+    onSignOut: () => void;
+}
+
+
+export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientProps) {
   const { toast } = useToast();
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [isSignedIn, setIsSignedIn] = useState(false);
-  const [userName, setUserName] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 
@@ -111,33 +113,14 @@ export default function EmpathAIClient() {
   const speechRecognition = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-      const signedIn = localStorage.getItem("counselai-signed-in") === "true";
-      const name = localStorage.getItem("counselai-user-name");
-      setIsSignedIn(signedIn);
-      setUserName(name);
-  }, []);
-
-  const handleSignInSuccess = (name: string) => {
-    localStorage.setItem("counselai-signed-in", "true");
-    localStorage.setItem("counselai-user-name", name);
-    setIsSignedIn(true);
-    setUserName(name);
-    createNewChat();
-  }
-
   const handleSignOut = () => {
-    localStorage.removeItem("counselai-signed-in");
-    localStorage.removeItem("counselai-user-name");
-    setIsSignedIn(false);
-    setUserName(null);
+    onSignOut();
     setChats([]);
     setActiveChatId(null);
   }
 
   // Load chats from local storage on initial render
   useEffect(() => {
-    if (!isSignedIn) return;
     try {
       const savedChats = localStorage.getItem("counselai-chats");
       if (savedChats) {
@@ -158,16 +141,16 @@ export default function EmpathAIClient() {
       createNewChat();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn]);
+  }, []);
 
   // Save chats to local storage whenever they change
   useEffect(() => {
-    if (isSignedIn && chats.length > 0) {
+    if (chats.length > 0) {
       localStorage.setItem("counselai-chats", JSON.stringify(chats));
-    } else if (isSignedIn) {
+    } else {
       localStorage.removeItem("counselai-chats");
     }
-  }, [chats, isSignedIn]);
+  }, [chats]);
   
   const createNewChat = useCallback(() => {
     const newChat: Chat = {
@@ -451,9 +434,6 @@ export default function EmpathAIClient() {
     return [...Object.entries(groups), ...olderEntries].filter(([, chats]) => chats.length > 0);
   }, [chats]);
 
-  if (!isSignedIn) {
-    return <AuthPage onSignInSuccess={handleSignInSuccess} />;
-  }
 
   return (
     <>
@@ -473,7 +453,7 @@ export default function EmpathAIClient() {
                 <BrainLogo className="h-8 w-8 text-primary" />
                 <h1 className="text-xl font-bold font-headline">CounselAI</h1>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => createNewChat()} disabled={!isSignedIn}>
+              <Button variant="ghost" size="icon" onClick={() => createNewChat()}>
                   <Plus className="h-6 w-6"/>
                   <span className="sr-only">New Chat</span>
               </Button>
@@ -530,18 +510,14 @@ export default function EmpathAIClient() {
               <h1 className="text-xl font-bold font-headline">CounselAI</h1>
             </div>
             <div className="flex items-center gap-2">
-               {isSignedIn && (
-                <>
-                  <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
-                      <Settings className="h-5 w-5" />
-                      <span className="sr-only">Settings</span>
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                      <LogOut className="h-5 w-5" />
-                      <span className="sr-only">Sign Out</span>
-                  </Button>
-                </>
-              )}
+                <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
+                    <Settings className="h-5 w-5" />
+                    <span className="sr-only">Settings</span>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                    <LogOut className="h-5 w-5" />
+                    <span className="sr-only">Sign Out</span>
+                </Button>
             </div>
           </header>
 
