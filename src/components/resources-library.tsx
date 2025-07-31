@@ -25,11 +25,10 @@ export type Resource = {
   id: string;
   title: string;
   description: string;
-  category: 'Anxiety' | 'Depression' | 'Sleep' | 'Stress' | 'Relationships' | 'Gratitude' | 'Grief' | 'Mindfulness';
+  category: 'Anxiety' | 'Depression' | 'Sleep' | 'Stress' | 'Relationships' | 'Gratitude' | 'Grief' | 'Mindfulness' | 'Self-Care' | 'Academic/Work Pressure' | 'Crisis Support';
   type: 'article' | 'video';
   content?: string;
   videoUrl?: string;
-  imageUrl: string;
   keywords: string[];
 };
 
@@ -40,7 +39,6 @@ const resourcesData: Resource[] = [
     description: 'A deep dive into the mechanisms of anxiety, its symptoms, and how panic attacks differ.',
     category: 'Anxiety',
     type: 'article',
-    imageUrl: 'https://placehold.co/600x400.png',
     keywords: ['anxiety', 'panic attacks', 'stress', 'fear', 'worry', 'symptoms'],
     content: `Anxiety is a natural human response to stress—a feeling of fear or apprehension about what’s to come. It’s the body’s way of preparing you for a challenge. For instance, feeling anxious before a major exam or a public speaking event is perfectly normal. This type of anxiety can even be beneficial, as it sharpens your focus and readies your body for action. However, when these feelings of intense fear and distress become overwhelming, persistent, and interfere with daily life, it may indicate an anxiety disorder.
 
@@ -56,7 +54,6 @@ The key difference between general anxiety and a panic attack lies in the onset 
     description: 'A 10-minute guided meditation to calm your mind and release anxiety.',
     category: 'Anxiety',
     type: 'video',
-    imageUrl: 'https://placehold.co/600x400.png',
     keywords: ['meditation', 'mindfulness', 'anxiety', 'calm'],
     videoUrl: 'https://www.youtube.com/embed/O-6f5wQXSu8',
   },
@@ -66,7 +63,6 @@ The key difference between general anxiety and a panic attack lies in the onset 
     description: 'A comprehensive overview of depression, its symptoms, causes, and the importance of seeking help.',
     category: 'Depression',
     type: 'article',
-    imageUrl: 'https://placehold.co/600x400.png',
     keywords: ['depression', 'sadness', 'low mood', 'mental health', 'hopelessness'],
     content: `Depression, clinically known as Major Depressive Disorder (MDD), is more than just feeling sad. It's a persistent and serious mood disorder that affects how you feel, think, and handle daily activities, such as sleeping, eating, or working. To be diagnosed with depression, the symptoms must be present for at least two weeks.
 
@@ -82,7 +78,6 @@ It is crucial to understand that depression is treatable. The most common treatm
     description: 'Beyond basic tips, understand the science of sleep and advanced strategies for a truly restful night.',
     category: 'Sleep',
     type: 'article',
-    imageUrl: 'https://placehold.co/600x400.png',
     keywords: ['sleep', 'insomnia', 'rest', 'sleep hygiene', 'circadian rhythm'],
     content: `Quality sleep is not a luxury; it is a biological necessity, fundamental to our physical and mental health. While we sleep, our brains are hard at work processing information, consolidating memories, and clearing out toxins. Our bodies use this time to repair cells, restore energy, and release essential hormones. Consistently failing to get enough quality sleep can have serious consequences, impacting everything from our mood and cognitive function to our immune system and risk of chronic disease.
 
@@ -98,17 +93,15 @@ Your pre-sleep routine, or "sleep hygiene," can make or break your night. Establ
     description: 'Practical strategies for coping with stress in your daily life.',
     category: 'Stress',
     type: 'video',
-    imageUrl: 'https://placehold.co/600x400.png',
-    keywords: ['stress', 'coping', 'management', 'relaxation'],
+    keywords: ['stress', 'coping', 'management', 'relaxation', 'burnout'],
     videoUrl: 'https://www.youtube.com/embed/hnpQrMqDoqE',
   },
-  {
+    {
     id: 'relationships-1',
     title: 'The Blueprint for Healthy Relationships',
     description: 'Explore the core components of healthy relationships, from communication to trust.',
     category: 'Relationships',
     type: 'article',
-    imageUrl: 'https://placehold.co/600x400.png',
     keywords: ['relationships', 'communication', 'boundaries', 'love', 'conflict', 'trust'],
     content: `Healthy relationships are a cornerstone of a fulfilling life, providing a source of joy, support, and personal growth. They are not built on grand gestures, but on a foundation of small, consistent actions rooted in respect, communication, and trust.
 
@@ -126,8 +119,7 @@ Finally, a healthy relationship involves **mutual respect**. This means valuing 
     description: 'Learn how practicing gratitude can rewire your brain for happiness and resilience.',
     category: 'Gratitude',
     type: 'article',
-    imageUrl: 'https://placehold.co/600x400.png',
-    keywords: ['gratitude', 'happiness', 'mindfulness', 'journaling', 'well-being'],
+    keywords: ['gratitude', 'happiness', 'mindfulness', 'journaling', 'well-being', 'positive thinking'],
     content: `Gratitude is more than just a fleeting feeling of thankfulness; it's a powerful practice that can fundamentally change your perspective and improve your mental well-being. It is the art of actively noticing and appreciating the good things in your life, no matter how small. Scientific studies have shown that a regular gratitude practice can lead to increased happiness, reduced symptoms of depression, better sleep, and greater resilience in the face of adversity.
 
 So, how does it work? When you practice gratitude, you are essentially training your brain to scan the world for positives rather than negatives. This is a concept known as neuroplasticity—the brain's ability to reorganize itself by forming new neural connections. By consistently focusing on what you're thankful for, you strengthen the neural pathways associated with positive emotions like joy, contentment, and love. This can help counteract the brain's natural "negativity bias," our tendency to pay more attention to negative experiences than positive ones.
@@ -144,8 +136,7 @@ You can also incorporate gratitude into your daily routine through mindfulness. 
     description: 'Understanding that grief is a unique and non-linear journey.',
     category: 'Grief',
     type: 'article',
-    imageUrl: 'https://placehold.co/600x400.png',
-    keywords: ['grief', 'loss', 'bereavement', 'sadness', 'coping'],
+    keywords: ['grief', 'loss', 'bereavement', 'sadness', 'coping', 'mourning'],
     content: `Grief is a natural, albeit painful, response to loss. It is the emotional landscape we must navigate after losing someone or something we love. While often associated with the death of a loved one, grief can also arise from other significant life changes, such as the end of a relationship, the loss of a job, or a decline in health. It's important to understand that there is no "right" way to grieve. Your journey through grief is as unique as your relationship with what you have lost.
 
 You may have heard of the "five stages of grief": denial, anger, bargaining, depression, and acceptance. While this model can be helpful for identifying some of the emotions you might experience, it's crucial to know that grief is not a neat, linear process. You may not experience all of these stages, and you may not experience them in that order. Grief is more like a wild, unpredictable ocean than a straight path. Some days, the waves will be overwhelming, while on other days, the waters may be calm.
@@ -162,8 +153,7 @@ Maintaining your physical health is also vital. Try to eat nutritious meals, get
     description: 'Learn the core principles of mindfulness and simple exercises to bring more presence to your daily life.',
     category: 'Mindfulness',
     type: 'article',
-    imageUrl: 'https://placehold.co/600x400.png',
-    keywords: ['mindfulness', 'meditation', 'presence', 'awareness', 'stress reduction'],
+    keywords: ['mindfulness', 'meditation', 'presence', 'awareness', 'stress reduction', 'focus'],
     content: `Mindfulness is the basic human ability to be fully present, aware of where we are and what we’re doing, and not overly reactive or overwhelmed by what’s going on around us. While it’s something we all naturally possess, it’s a skill that can be cultivated and deepened through practice, much like strengthening a muscle. The goal of mindfulness isn't to stop your thoughts or empty your mind, but rather to observe your thoughts and feelings from a distance without judging them.
 
 In our fast-paced, constantly connected world, our minds are often racing—jumping from worries about the future to regrets about the past. Mindfulness provides an anchor to the present moment, offering a powerful antidote to this mental chatter. By bringing a gentle, accepting awareness to our current experience, we can reduce stress, improve focus, and enhance our overall sense of well-being.
@@ -174,9 +164,63 @@ You can also integrate mindfulness into everyday activities. This is often calle
 
 The benefits of a consistent mindfulness practice are well-documented. Studies have shown it can reduce symptoms of anxiety and depression, improve sleep quality, lower blood pressure, and even enhance immune function. By learning to anchor ourselves in the present, we can navigate life's challenges with greater calm, clarity, and resilience.`
   },
+  {
+    id: 'self-care-1',
+    title: 'Building Your Personal Self-Care Toolkit',
+    description: 'Self-care is not selfish. Learn how to build a sustainable practice that works for you.',
+    category: 'Self-Care',
+    type: 'article',
+    keywords: ['self-care', 'well-being', 'burnout', 'routine', 'balance'],
+    content: `Self-care is any intentional action you take to care for your physical, mental, and emotional health. It's a broad concept, and it looks different for everyone. The key is that it is intentional and tailored to you. It is not about indulgence; it is about preservation. In a world that often demands constant productivity, prioritizing self-care is a radical act of self-preservation that is essential for long-term well-being and resilience.
+
+Think of building a self-care plan like building a toolkit. You need a variety of tools for different situations. Some tools are for daily maintenance, while others are for when things get tough. A balanced toolkit should address several key areas:
+
+**1. Physical Self-Care:** This involves moving your body, getting enough sleep, and eating nutritious food. It doesn’t have to mean intense workouts. It could be a gentle walk, stretching, or dancing to your favorite song. Prioritizing sleep is one of the most effective forms of self-care. Fueling your body with foods that make you feel good is another cornerstone.
+
+**2. Mental Self-Care:** This is about stimulating your mind and reducing stress. Activities could include reading a book, doing a puzzle, learning a new skill, or practicing mindfulness. It also means setting boundaries around mental clutter, such as limiting your news consumption or time on social media.
+
+**3. Emotional Self-Care:** This involves acknowledging and processing your feelings in a healthy way. This could be through journaling, talking to a trusted friend or therapist, or engaging in a creative hobby. It's about giving yourself permission to feel without judgment.
+
+**4. Social Self-Care:** Nurturing your relationships with others is crucial. This means spending quality time with people who uplift you. It could be a deep conversation with a friend, a fun outing with family, or a quiet evening with a partner.
+
+**How to Start:** Begin by identifying small, manageable activities you can incorporate into your daily or weekly routine. Start with just 5-10 minutes a day. The goal is not to add more stress to your life but to find sustainable practices that replenish your energy. Be flexible and compassionate with yourself. Some days, self-care might be a bubble bath; other days, it might simply be saying "no" to a commitment that would overwhelm you. The most important thing is to listen to your body and mind and give them what they need.`
+  },
+  {
+      id: 'work-pressure-1',
+      title: 'Managing Academic and Work Pressure',
+      description: 'Strategies to cope with pressure, avoid burnout, and find a healthy work-life balance.',
+      category: 'Academic/Work Pressure',
+      type: 'article',
+      keywords: ['burnout', 'stress', 'procrastination', 'time management', 'work-life balance', 'exams', 'deadlines'],
+      content: `Academic and professional environments can be incredibly demanding, often leading to significant stress and pressure. While a healthy amount of pressure can be motivating, chronic stress can lead to burnout, a state of emotional, physical, and mental exhaustion caused by prolonged or excessive stress. Recognizing the signs of burnout—such as cynicism, feelings of ineffectiveness, and exhaustion—is the first step toward managing it.
+
+One of the most effective strategies for managing pressure is effective **time management**. The Eisenhower Matrix is a great tool for this. Categorize your tasks into four quadrants:
+1.  **Urgent and Important:** (Do first) - Crises, deadlines, pressing problems.
+2.  **Important, but Not Urgent:** (Schedule) - Prevention, planning, relationship building. This is where you should aim to spend most of your time.
+3.  **Urgent, but Not Important:** (Delegate) - Interruptions, some meetings, other people's minor issues.
+4.  **Neither Urgent nor Important:** (Eliminate) - Trivial tasks, time-wasters.
+
+This helps you focus on what truly matters, rather than getting caught up in the tyranny of the urgent. Another powerful technique is the **Pomodoro Technique**: work in focused 25-minute intervals, followed by a 5-minute break. After four "Pomodoros," take a longer break of 15-30 minutes. This prevents mental fatigue and improves concentration.
+
+**Setting Boundaries** is also critical. Learn to say "no" to additional commitments when your plate is already full. In a digital world, this also means setting boundaries with technology. Designate specific times to check email and messages, and create "offline" hours where you can disconnect and recharge. It's not about working harder; it's about working smarter and preserving your energy.
+
+Finally, prioritize **Self-Care**. Ensure you are getting adequate sleep, eating nutritious meals, and engaging in regular physical activity. These are non-negotiable for building resilience against stress. Make time for hobbies and social connections that have nothing to do with your work or studies. A healthy work-life balance isn't a luxury; it's a necessity for sustained performance and overall well-being. If you're struggling, don't hesitate to reach out to a manager, academic advisor, or mental health professional for support.`
+  }
 ];
 
-const categories: Resource['category'][] = ['Anxiety', 'Depression', 'Sleep', 'Stress', 'Relationships', 'Gratitude', 'Grief', 'Mindfulness'];
+const categories: Resource['category'][] = [
+    'Anxiety', 
+    'Depression', 
+    'Sleep', 
+    'Stress', 
+    'Relationships', 
+    'Gratitude', 
+    'Grief', 
+    'Mindfulness',
+    'Self-Care',
+    'Academic/Work Pressure',
+    'Crisis Support'
+];
 
 export default function ResourcesLibrary({ isOpen, onOpenChange }: ResourcesLibraryProps) {
   const [searchTerm, setSearchTerm] = useState("");

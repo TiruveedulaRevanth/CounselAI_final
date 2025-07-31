@@ -3,9 +3,8 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "./ui/button";
-import Image from "next/image";
 import { Badge } from "./ui/badge";
-import { Resource } from "./resources-library";
+import type { Resource } from "./resources-library";
 import { Video, BookOpen } from "lucide-react";
 
 interface ResourceCardProps {
@@ -23,6 +22,9 @@ export default function ResourceCard({ resource, onReadMore }: ResourceCardProps
     Gratitude: "from-yellow-200 to-lime-200",
     Grief: "from-gray-300 to-blue-gray-300",
     Mindfulness: "from-teal-200 to-green-200",
+    'Self-Care': 'from-green-200 to-emerald-200',
+    'Academic/Work Pressure': 'from-orange-200 to-red-200',
+    'Crisis Support': 'from-red-300 to-rose-300',
   };
   const darkGradients = {
     Anxiety: "dark:from-blue-900 dark:to-cyan-900",
@@ -33,6 +35,9 @@ export default function ResourceCard({ resource, onReadMore }: ResourceCardProps
     Gratitude: "dark:from-yellow-900 dark:to-lime-900",
     Grief: "dark:from-gray-800 dark:to-blue-gray-700",
     Mindfulness: "dark:from-teal-900 dark:to-green-900",
+    'Self-Care': 'dark:from-green-900 dark:to-emerald-900',
+    'Academic/Work Pressure': 'dark:from-orange-900 dark:to-red-900',
+    'Crisis Support': 'dark:from-red-800 dark:to-rose-800',
   }
 
   const gradientClass = `${gradients[resource.category]} ${darkGradients[resource.category]}`;
@@ -60,5 +65,3 @@ export default function ResourceCard({ resource, onReadMore }: ResourceCardProps
     </Card>
   );
 }
-
-    
