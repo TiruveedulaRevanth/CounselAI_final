@@ -94,6 +94,14 @@ export const therapyStyles = [
   },
 ];
 
+export const supportedLanguages = [
+    { name: 'English', code: 'en-US' },
+    { name: 'Français', code: 'fr-FR' },
+    { name: 'Deutsch', code: 'de-DE' },
+    { name: 'Español', code: 'es-ES' },
+    { name: '中文 (Mandarin)', code: 'zh-CN' },
+];
+
 
 interface EmpathAIClientProps {
     userName: string | null;
@@ -114,9 +122,10 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
   const [userInput, setUserInput] = useState("");
 
   // Settings state
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [therapyStyle, setTherapyStyle] = useState(therapyStyles[0].prompt);
+  const [selectedLanguage, setSelectedLanguage] = useState(supportedLanguages[0].code);
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
 
   const speechRecognition = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -235,17 +244,16 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
   const activeChat = useMemo(() => chats.find(chat => chat.id === activeChatId), [chats, activeChatId]);
 
   const speakText = useCallback((text: string) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      if (selectedVoice) {
+    if ('speechSynthesis' in window && selectedVoice) {
+        const utterance = new SpeechSynthesisUtterance(text);
         utterance.voice = selectedVoice;
-      }
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
+        utterance.lang = selectedVoice.lang;
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
     }
   }, [selectedVoice]);
 
@@ -259,24 +267,26 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
   useEffect(() => {
     if ('speechSynthesis' in window) {
       const loadVoices = () => {
-        const availableVoices = window.speechSynthesis.getVoices();
-        if (availableVoices.length > 0) {
-          setVoices(availableVoices);
-          if (!selectedVoice) {
-            const preferredVoice = availableVoices.find(v => v.name.includes('Google') && v.lang.startsWith('en')) || availableVoices[0];
-            setSelectedVoice(preferredVoice);
-          }
+        const allVoices = window.speechSynthesis.getVoices();
+        if (allVoices.length > 0) {
+            setAvailableVoices(allVoices);
         }
       };
-      
       window.speechSynthesis.onvoiceschanged = loadVoices;
       loadVoices();
-      
       return () => {
         window.speechSynthesis.onvoiceschanged = null;
       }
     }
-  }, [selectedVoice]);
+  }, []);
+
+  useEffect(() => {
+      if (availableVoices.length > 0) {
+          const voicesForLanguage = availableVoices.filter(v => v.lang.startsWith(selectedLanguage.substring(0,2)));
+          setSelectedVoice(voicesForLanguage[0] || availableVoices.find(v => v.lang.startsWith('en')) || availableVoices[0]);
+      }
+  }, [selectedLanguage, availableVoices]);
+
 
   useEffect(() => {
     if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
@@ -284,7 +294,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = selectedLanguage;
 
       recognition.onresult = (event: any) => {
         let interimTranscript = "";
@@ -323,7 +333,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
 
       speechRecognition.current = recognition;
     }
-  }, [toast]);
+  }, [toast, selectedLanguage]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -512,7 +522,9 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
   return (
     <>
        <SettingsDialog
-          voices={voices}
+          availableVoices={availableVoices}
+          selectedLanguage={selectedLanguage}
+          setSelectedLanguage={setSelectedLanguage}
           selectedVoice={selectedVoice}
           setSelectedVoice={setSelectedVoice}
           therapyStyle={therapyStyle}
@@ -713,7 +725,5 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
     </>
   );
 }
-
-    
 
     

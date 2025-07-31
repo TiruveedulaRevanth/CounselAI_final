@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,10 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { therapyStyles } from "./empath-ai-client";
+import { therapyStyles, supportedLanguages } from "./empath-ai-client";
 
 interface SettingsDialogProps {
-  voices: SpeechSynthesisVoice[];
+  availableVoices: SpeechSynthesisVoice[];
+  selectedLanguage: string;
+  setSelectedLanguage: (language: string) => void;
   selectedVoice: SpeechSynthesisVoice | null;
   setSelectedVoice: (voice: SpeechSynthesisVoice | null) => void;
   therapyStyle: string;
@@ -30,7 +33,9 @@ interface SettingsDialogProps {
 }
 
 export default function SettingsDialog({
-  voices,
+  availableVoices,
+  selectedLanguage,
+  setSelectedLanguage,
   selectedVoice,
   setSelectedVoice,
   therapyStyle,
@@ -39,8 +44,21 @@ export default function SettingsDialog({
   setIsSettingsOpen,
 }: SettingsDialogProps) {
 
+  const voicesForLanguage = useMemo(() => {
+    return availableVoices
+      .filter(voice => voice.lang.startsWith(selectedLanguage.substring(0, 2)))
+      .slice(0, 2); // Get first 2 available voices for the selected language
+  }, [availableVoices, selectedLanguage]);
+
+  const handleLanguageChange = (value: string) => {
+    setSelectedLanguage(value);
+    // Reset voice selection when language changes
+    const newVoices = availableVoices.filter(v => v.lang.startsWith(value.substring(0,2)));
+    setSelectedVoice(newVoices[0] || null);
+  };
+
   const handleVoiceChange = (value: string) => {
-    const voice = voices.find(v => v.name === value) || null;
+    const voice = availableVoices.find(v => v.name === value) || null;
     setSelectedVoice(voice);
   };
 
@@ -62,20 +80,38 @@ export default function SettingsDialog({
         </DialogHeader>
         <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="language-select" className="text-right">
+                Language
+              </Label>
+              <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
+                <SelectTrigger id="language-select" className="col-span-3">
+                  <SelectValue placeholder="Select a language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {supportedLanguages.map(lang => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="voice-select" className="text-right">
                 Voice
             </Label>
             <Select
                 value={selectedVoice?.name}
                 onValueChange={handleVoiceChange}
+                disabled={voicesForLanguage.length === 0}
             >
                 <SelectTrigger id="voice-select" className="col-span-3">
                 <SelectValue placeholder="Select a voice" />
                 </SelectTrigger>
                 <SelectContent>
-                {voices.map((voice, index) => (
+                {voicesForLanguage.map((voice, index) => (
                     <SelectItem key={`${voice.name}-${index}`} value={voice.name}>
-                    {voice.name}
+                     {`Assistant ${index + 1}`}
                     </SelectItem>
                 ))}
                 </SelectContent>
@@ -106,3 +142,5 @@ export default function SettingsDialog({
     </Dialog>
   );
 }
+
+    
