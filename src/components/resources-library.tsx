@@ -10,7 +10,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
 import ResourceCard from "./resource-card";
 import { Library } from "lucide-react";
@@ -208,35 +207,21 @@ Finally, prioritize **Self-Care**. Ensure you are getting adequate sleep, eating
   }
 ];
 
-const categories: Resource['category'][] = [
-    'Anxiety', 
-    'Depression', 
-    'Sleep', 
-    'Stress', 
-    'Relationships', 
-    'Gratitude', 
-    'Grief', 
-    'Mindfulness',
-    'Self-Care',
-    'Academic/Work Pressure',
-    'Crisis Support'
-];
-
 export default function ResourcesLibrary({ isOpen, onOpenChange }: ResourcesLibraryProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<Resource['category'] | 'All'>('All');
   const [activeResource, setActiveResource] = useState<Resource | null>(null);
 
   const filteredResources = useMemo(() => {
     return resourcesData.filter(resource => {
-      const categoryMatch = selectedCategory === 'All' || resource.category === selectedCategory;
+      const searchTermLower = searchTerm.toLowerCase();
       const searchMatch = searchTerm.trim() === '' ||
-        resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        resource.keywords.some(k => k.toLowerCase().includes(searchTerm.toLowerCase()));
-      return categoryMatch && searchMatch;
+        resource.title.toLowerCase().includes(searchTermLower) ||
+        resource.description.toLowerCase().includes(searchTermLower) ||
+        resource.category.toLowerCase().includes(searchTermLower) ||
+        resource.keywords.some(k => k.toLowerCase().includes(searchTermLower));
+      return searchMatch;
     });
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm]);
 
   const handleClose = () => {
     onOpenChange(false);
@@ -244,7 +229,6 @@ export default function ResourcesLibrary({ isOpen, onOpenChange }: ResourcesLibr
     setTimeout(() => {
         setActiveResource(null);
         setSearchTerm("");
-        setSelectedCategory("All");
     }, 300);
   }
 
@@ -295,32 +279,11 @@ export default function ResourcesLibrary({ isOpen, onOpenChange }: ResourcesLibr
           <>
             <div className="flex flex-col sm:flex-row gap-4">
               <Input
-                placeholder="Search resources..."
+                placeholder="Search by title, keyword, or category..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1"
               />
-              <ScrollArea orientation="horizontal" className="w-full sm:w-auto">
-                 <div className="flex gap-2 pb-2 whitespace-nowrap">
-                  <Badge
-                    variant={selectedCategory === 'All' ? 'default' : 'secondary'}
-                    onClick={() => setSelectedCategory('All')}
-                    className="cursor-pointer"
-                  >
-                    All
-                  </Badge>
-                  {categories.sort().map(cat => (
-                    <Badge
-                      key={cat}
-                      variant={selectedCategory === cat ? 'default' : 'secondary'}
-                      onClick={() => setSelectedCategory(cat)}
-                      className="cursor-pointer"
-                    >
-                      {cat}
-                    </Badge>
-                  ))}
-                </div>
-              </ScrollArea>
             </div>
             <ScrollArea className="flex-1 -mx-6 px-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
@@ -345,5 +308,3 @@ export default function ResourcesLibrary({ isOpen, onOpenChange }: ResourcesLibr
     </Dialog>
   );
 }
-
-    
