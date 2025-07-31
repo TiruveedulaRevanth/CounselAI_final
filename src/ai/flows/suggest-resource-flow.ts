@@ -20,7 +20,7 @@ const ResourceSchema = z.object({
   title: z.string(),
   description: z.string(),
   category: z.enum(['Core Mental Health', 'Stress & Burnout', 'Sleep', 'Relationships', 'Academic/Work Pressure', 'Self-Care', 'Crisis Support']),
-  type: z.enum(['article', 'video']),
+  type: z.enum(['article']),
   keywords: z.array(z.string()),
 });
 
@@ -491,5 +491,7 @@ const suggestResourceFlow = ai.defineFlow(
     return {};
   }
 );
+
+    
 
     

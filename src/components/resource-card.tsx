@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import type { Resource } from "./resources-library";
-import { Video, BookOpen } from "lucide-react";
+import { BookOpen } from "lucide-react";
 
 interface ResourceCardProps {
   resource: Resource;
@@ -50,12 +50,14 @@ export default function ResourceCard({ resource, onReadMore }: ResourceCardProps
       </CardHeader>
       <CardFooter className="mt-auto pt-4">
         <Button onClick={onReadMore} className="w-full">
-          {resource.videoUrl ? <Video className="mr-2 h-4 w-4"/> : <BookOpen className="mr-2 h-4 w-4"/>}
-          {resource.videoUrl ? 'Read & Watch' : 'Read Article'}
+          <BookOpen className="mr-2 h-4 w-4"/>
+          Read Article
         </Button>
       </CardFooter>
     </Card>
   );
 }
+
+    
 
     
