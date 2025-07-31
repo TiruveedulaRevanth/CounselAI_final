@@ -4,7 +4,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft } from "lucide-react"
+import { PanelLeft, Trash2 } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -588,7 +588,7 @@ const SidebarMenuAction = React.forwardRef<
 >(({ className, asChild = false, showOnHover = false, ...props }, ref) => {
   const Comp = asChild ? Slot : "button"
 
-  return (
+  const actionButton = (
     <Comp
       ref={ref}
       data-sidebar="menu-action"
@@ -606,8 +606,17 @@ const SidebarMenuAction = React.forwardRef<
       )}
       {...props}
     />
-  )
-})
+  );
+
+  return (
+    <Tooltip>
+        <TooltipTrigger asChild>{actionButton}</TooltipTrigger>
+        <TooltipContent side="right" align="center">
+            <p>Delete Chat</p>
+        </TooltipContent>
+    </Tooltip>
+  );
+});
 SidebarMenuAction.displayName = "SidebarMenuAction"
 
 const SidebarMenuBadge = React.forwardRef<

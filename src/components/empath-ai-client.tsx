@@ -45,6 +45,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BrainLogo } from "./brain-logo";
 import { ThemeToggle } from "./theme-toggle";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+
 
 declare global {
   interface Window {
@@ -148,16 +150,12 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
           setChats(updatedChats);
           setActiveChatId(updatedChats[0].id);
         } else {
-          // No chats found, create one on first login
-           if (localStorage.getItem("counselai-signed-in")) {
-             createNewChat();
-           }
+          // No chats found, let user create one.
+           setActiveChatId(null);
         }
       } else {
-         // No chats key, create one on first login
-         if (localStorage.getItem("counselai-signed-in")) {
-          createNewChat();
-        }
+         // No chats key, let user create one
+         setActiveChatId(null);
       }
     } catch (error) {
       console.error("Failed to load chats from local storage:", error);
@@ -521,7 +519,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
   );
 
   return (
-    <>
+    <TooltipProvider>
        <SettingsDialog
           availableVoices={availableVoices}
           selectedLanguage={selectedLanguage}
@@ -540,10 +538,17 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                 <BrainLogo className="h-8 w-8" />
                 <h1 className="text-xl font-bold font-headline">CounselAI</h1>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => createNewChat()}>
-                  <Plus className="h-6 w-6"/>
-                  <span className="sr-only">New Chat</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" onClick={() => createNewChat()}>
+                      <Plus className="h-6 w-6"/>
+                      <span className="sr-only">New Chat</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>New Chat</p>
+                </TooltipContent>
+              </Tooltip>
           </div>
         </SidebarHeader>
         <SidebarContent className="flex-1">
@@ -602,10 +607,17 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                 <ThemeToggle />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-5 w-5" />
-                      <span className="sr-only">Delete Chats</span>
-                    </Button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <Trash2 className="h-5 w-5" />
+                                <span className="sr-only">Delete Chats</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Delete Chats</p>
+                        </TooltipContent>
+                    </Tooltip>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <BulkDeleteDialog
@@ -639,14 +651,28 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                     </BulkDeleteDialog>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
-                    <Settings className="h-5 w-5" />
-                    <span className="sr-only">Settings</span>
-                </Button>
-                <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                    <LogOut className="h-5 w-5" />
-                    <span className="sr-only">Sign Out</span>
-                </Button>
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
+                            <Settings className="h-5 w-5" />
+                            <span className="sr-only">Settings</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Settings</p>
+                    </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                            <LogOut className="h-5 w-5" />
+                            <span className="sr-only">Sign Out</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Sign Out</p>
+                    </TooltipContent>
+                </Tooltip>
             </div>
           </header>
 
@@ -686,35 +712,56 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                   {isSpeaking ? (
-                      <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-10 w-10 shrink-0 rounded-full"
-                      onClick={handleStopSpeaking}
-                      >
-                      <Square className="h-5 w-5" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-10 w-10 shrink-0 rounded-full"
+                            onClick={handleStopSpeaking}
+                          >
+                            <Square className="h-5 w-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Stop Speaking</p>
+                        </TooltipContent>
+                      </Tooltip>
                   ) : (
-                      <Button
-                      size="icon"
-                      variant="ghost"
-                      className={`h-10 w-10 shrink-0 rounded-full ${
-                          isListening ? "text-red-500" : ""
-                      }`}
-                      onClick={handleMicClick}
-                      disabled={isLoading || !activeChatId}
-                      >
-                      <Mic className="h-5 w-5" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className={`h-10 w-10 shrink-0 rounded-full ${
+                                isListening ? "text-red-500" : ""
+                            }`}
+                            onClick={handleMicClick}
+                            disabled={isLoading || !activeChatId}
+                          >
+                            <Mic className="h-5 w-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Use Microphone</p>
+                        </TooltipContent>
+                      </Tooltip>
                   )}
-                  <Button
-                      size="icon"
-                      onClick={() => handleSend(userInput)}
-                      disabled={!userInput.trim() || isLoading || !activeChatId}
-                      className="h-10 w-10 shrink-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-gray-600"
-                  >
-                      <Send className="h-5 w-5" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                         <Button
+                            size="icon"
+                            onClick={() => handleSend(userInput)}
+                            disabled={!userInput.trim() || isLoading || !activeChatId}
+                            className="h-10 w-10 shrink-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-gray-600"
+                        >
+                            <Send className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Send Message</p>
+                    </TooltipContent>
+                  </Tooltip>
               </div>
             </div>
             <p className="text-xs text-muted-foreground text-center mt-2 h-4">
@@ -723,7 +770,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
           </footer>
         </div>
        </SidebarInset>
-    </>
+    </TooltipProvider>
   );
 }
 
