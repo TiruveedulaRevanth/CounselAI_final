@@ -218,31 +218,33 @@ export default function ResourcesLibrary({ isOpen, onOpenChange }: ResourcesLibr
         </DialogHeader>
         
         {activeResource ? (
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0">
                 <Button variant="outline" onClick={() => setActiveResource(null)} className="mb-4 self-start">
                     &larr; Back to Library
                 </Button>
-                <ScrollArea className="flex-1 pr-4">
-                    <h2 className="text-2xl font-bold mb-2">{activeResource.title}</h2>
-                    <p className="text-muted-foreground mb-4">{activeResource.description}</p>
-                    {activeResource.type === 'video' && activeResource.videoUrl ? (
-                        <div className="aspect-video">
-                            <iframe
-                                width="100%"
-                                height="100%"
-                                src={activeResource.videoUrl}
-                                title={activeResource.title}
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                className="rounded-lg"
-                            ></iframe>
-                        </div>
-                    ) : (
-                        <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed text-base">
-                            {activeResource.content}
-                        </div>
-                    )}
+                <ScrollArea className="flex-1 pr-4 -mr-6">
+                    <div className="pr-6">
+                        <h2 className="text-2xl font-bold mb-2">{activeResource.title}</h2>
+                        <p className="text-muted-foreground mb-4">{activeResource.description}</p>
+                        {activeResource.type === 'video' && activeResource.videoUrl ? (
+                            <div className="aspect-video">
+                                <iframe
+                                    width="100%"
+                                    height="100%"
+                                    src={activeResource.videoUrl}
+                                    title={activeResource.title}
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                    className="rounded-lg"
+                                ></iframe>
+                            </div>
+                        ) : (
+                            <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed text-base">
+                                {activeResource.content}
+                            </div>
+                        )}
+                    </div>
                 </ScrollArea>
             </div>
         ) : (
@@ -254,25 +256,27 @@ export default function ResourcesLibrary({ isOpen, onOpenChange }: ResourcesLibr
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1"
               />
-              <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-                <Badge
-                  variant={selectedCategory === 'All' ? 'default' : 'secondary'}
-                  onClick={() => setSelectedCategory('All')}
-                  className="cursor-pointer"
-                >
-                  All
-                </Badge>
-                {categories.sort().map(cat => (
+              <ScrollArea className="sm:max-w-xs">
+                <div className="flex gap-2 pb-2 -mx-1 px-1">
                   <Badge
-                    key={cat}
-                    variant={selectedCategory === cat ? 'default' : 'secondary'}
-                    onClick={() => setSelectedCategory(cat)}
+                    variant={selectedCategory === 'All' ? 'default' : 'secondary'}
+                    onClick={() => setSelectedCategory('All')}
                     className="cursor-pointer"
                   >
-                    {cat}
+                    All
                   </Badge>
-                ))}
-              </div>
+                  {categories.sort().map(cat => (
+                    <Badge
+                      key={cat}
+                      variant={selectedCategory === cat ? 'default' : 'secondary'}
+                      onClick={() => setSelectedCategory(cat)}
+                      className="cursor-pointer"
+                    >
+                      {cat}
+                    </Badge>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
             <ScrollArea className="flex-1 -mx-6 px-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
@@ -297,5 +301,3 @@ export default function ResourcesLibrary({ isOpen, onOpenChange }: ResourcesLibr
     </Dialog>
   );
 }
-
-    
