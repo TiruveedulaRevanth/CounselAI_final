@@ -111,7 +111,7 @@ export default function SettingsDialog({
                 <SelectContent>
                 {voicesForLanguage.map((voice, index) => (
                     <SelectItem key={`${voice.name}-${index}`} value={voice.name}>
-                     {`Assistant ${index + 1}`}
+                     {index === 0 ? "Nova" : "Orion"}
                     </SelectItem>
                 ))}
                 </SelectContent>
@@ -142,5 +142,3 @@ export default function SettingsDialog({
     </Dialog>
   );
 }
-
-    
