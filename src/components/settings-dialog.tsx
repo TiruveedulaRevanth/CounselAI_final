@@ -73,8 +73,8 @@ export default function SettingsDialog({
                 <SelectValue placeholder="Select a voice" />
                 </SelectTrigger>
                 <SelectContent>
-                {voices.map((voice) => (
-                    <SelectItem key={voice.name} value={voice.name}>
+                {voices.map((voice, index) => (
+                    <SelectItem key={`${voice.name}-${index}`} value={voice.name}>
                     {voice.name}
                     </SelectItem>
                 ))}
