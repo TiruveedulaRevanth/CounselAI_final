@@ -623,29 +623,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
               <h1 className="text-xl font-bold font-headline">CounselAI</h1>
             </div>
             <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="destructive" size="sm" onClick={() => setIsEmergencyOpen(true)} className="gap-2">
-                      <HeartCrack className="h-4 w-4" />
-                      <span className="hidden sm:inline">Need Help?</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Get Emergency Help</p>
-                  </TooltipContent>
-                </Tooltip>
                 <ThemeToggle />
-                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => setIsLibraryOpen(true)}>
-                      <Library className="h-5 w-5" />
-                      <span className="sr-only">Resources Library</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Resources Library</p>
-                  </TooltipContent>
-                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" onClick={() => setIsToolkitOpen(true)}>
@@ -728,7 +706,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
             </div>
           </header>
 
-          <main className="flex-1 min-h-0">
+          <main className="flex-1 min-h-0 relative">
              {activeChat && activeChat.messages.length > 0 ? (
                 <ScrollArea className="h-full">
                   <div className="space-y-6 p-4 md:p-6 lg:p-8 max-w-4xl mx-auto w-full">
@@ -749,6 +727,30 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                     <p className="text-muted-foreground mt-2">Start a new conversation by typing below or using the microphone.</p>
                 </div>
               )}
+               <div className="absolute bottom-4 left-4 flex flex-col gap-2">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="destructive" size="sm" onClick={() => setIsEmergencyOpen(true)} className="gap-2 shadow-lg">
+                            <HeartCrack className="h-4 w-4" />
+                            <span className="hidden sm:inline">Need Help?</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                            <p>Get Emergency Help</p>
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="secondary" size="sm" onClick={() => setIsLibraryOpen(true)} className="gap-2 shadow-lg">
+                            <Library className="h-4 w-4" />
+                            <span className="hidden sm:inline">Library</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                            <p>Resources Library</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </div>
           </main>
 
           <footer className="p-4 w-full shrink-0">
@@ -825,3 +827,5 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
     </TooltipProvider>
   );
 }
+
+    
