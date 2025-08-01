@@ -27,7 +27,6 @@ const ResourceSchema = z.object({
 const SuggestResourceOutputSchema = z.object({
   id: z.string().optional(),
   title: z.string().optional(),
-  relevanceScore: z.number().optional().describe('A score from 0 to 1 indicating how relevant the resource is to the query.'),
 });
 
 export type SuggestResourceOutput = z.infer<typeof SuggestResourceOutputSchema>;
@@ -466,9 +465,9 @@ Available Resources:
   keywords: [{{#each this.keywords}}"{{this}}"{{#unless @last}}, {{/unless}}{{/each}}]
 {{/each}}
 
-Based on the query, identify the single best resource and provide its ID and title. Also, provide a relevance score from 0.0 to 1.0, where 1.0 is a perfect match.
+Based on the query, identify the single best resource and provide its ID and title.
 
-If no resource is a good match (relevance score below 0.6), return an empty object.`,
+If no resource is a good match, return an empty object.`,
 });
 
 const suggestResourceFlow = ai.defineFlow(
@@ -484,14 +483,6 @@ const suggestResourceFlow = ai.defineFlow(
         resources: resourcesData 
     });
     
-    if (output?.relevanceScore && output.relevanceScore > 0.6) {
-        return output;
-    }
-    
-    return {};
+    return output || {};
   }
 );
-
-    
-
-    
