@@ -254,7 +254,7 @@ const SidebarTrigger = React.forwardRef<
         data-sidebar="trigger"
         variant="ghost"
         size="icon"
-        className={cn("h-7 w-7", className)}
+        className={cn("h-7 w-7", "md:flex hidden", className)}
         onClick={(event) => {
             onClick?.(event)
             toggleSidebar()
@@ -410,7 +410,8 @@ const SidebarContent = React.forwardRef<
       ref={ref}
       data-sidebar="content"
       className={cn(
-        "flex min-h-0 flex-col gap-2 overflow-x-hidden overflow-y-auto group-data-[collapsible=icon]:overflow-hidden",
+        "flex min-h-0 flex-col gap-2 overflow-y-auto group-data-[collapsible=icon]:overflow-hidden",
+        "overflow-x-hidden",
         className
       )}
       {...props}

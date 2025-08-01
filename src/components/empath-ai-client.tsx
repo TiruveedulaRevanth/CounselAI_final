@@ -572,7 +572,6 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
       <Sidebar collapsible="offcanvas">
         <SidebarHeader>
            <div className="flex items-center gap-2">
-            <SidebarTrigger tooltip="Toggle chat history" />
             <SidebarGroupLabel className="text-lg font-bold text-foreground">Chats</SidebarGroupLabel>
           </div>
             <SidebarMenuButton
@@ -651,6 +650,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
         <div className="flex flex-col h-screen">
           <header className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
+                <SidebarTrigger tooltip="Toggle chat history" className="md:hidden" />
                 <BrainLogo className="w-7 h-7"/>
                 <h2 className="text-lg font-semibold">CounselAI</h2>
             </div>
@@ -728,7 +728,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     { isSpeaking ? (
                         <Tooltip>
-                            <TooltipTrigger asChild>
+                            <TooltipTrigger asChild={true}>
                                 <Button variant="ghost" size="icon" onClick={handleStopSpeaking}>
                                     <Square className="h-5 w-5" />
                                 </Button>
