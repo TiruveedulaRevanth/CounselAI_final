@@ -2,44 +2,57 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AuthPage from "@/components/auth-page";
+import AuthPage, { Profile } from "@/components/auth-page";
 import AppLayout from "@/components/app-layout";
 
 export default function Home() {
-  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null); // Start with null
-  const [userName, setUserName] = useState<string | null>(null);
-  
+  const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+
   // This effect will run once on the client to check local storage.
   useEffect(() => {
-    const signedInStatus = localStorage.getItem("counselai-signed-in") === "true";
-    const storedName = localStorage.getItem("counselai-user-name");
-    setIsSignedIn(signedInStatus);
-    setUserName(storedName);
+    try {
+      const storedProfiles = localStorage.getItem("counselai-profiles");
+      const storedActiveProfileId = localStorage.getItem("counselai-active-profile-id");
+
+      const parsedProfiles = storedProfiles ? JSON.parse(storedProfiles) : [];
+      setProfiles(parsedProfiles);
+
+      if (storedActiveProfileId && parsedProfiles.length > 0) {
+        const foundProfile = parsedProfiles.find((p: Profile) => p.id === storedActiveProfileId);
+        if (foundProfile) {
+          setActiveProfile(foundProfile);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load profile data from local storage:", error);
+    }
   }, []);
 
-  const handleSignInSuccess = (name: string) => {
-    localStorage.setItem("counselai-signed-in", "true");
-    localStorage.setItem("counselai-user-name", name);
-    setIsSignedIn(true);
-    setUserName(name);
+  const handleSignInSuccess = (profile: Profile) => {
+    localStorage.setItem("counselai-active-profile-id", profile.id);
+    
+    const existingProfiles = profiles.filter(p => p.id !== profile.id);
+    const updatedProfiles = [...existingProfiles, profile];
+    
+    setProfiles(updatedProfiles);
+    localStorage.setItem("counselai-profiles", JSON.stringify(updatedProfiles));
+    setActiveProfile(profile);
   };
   
   const handleSignOut = () => {
-    localStorage.removeItem("counselai-signed-in");
-    localStorage.removeItem("counselai-user-name");
-    setIsSignedIn(false);
-    setUserName(null);
+    localStorage.removeItem("counselai-active-profile-id");
+    setActiveProfile(null);
   }
 
-  // Render nothing until the client-side check is complete.
-  // This ensures server and client render the same initial null.
-  if (isSignedIn === null) {
-    return null; // Or a loading spinner
+  // Render nothing on the server to prevent hydration mismatch
+  if (typeof window === 'undefined') {
+    return null;
   }
 
-  if (!isSignedIn) {
-    return <AuthPage onSignInSuccess={handleSignInSuccess} />;
+  if (!activeProfile) {
+    return <AuthPage onSignInSuccess={handleSignInSuccess} existingProfiles={profiles} />;
   }
 
-  return <AppLayout userName={userName} onSignOut={handleSignOut} />;
+  return <AppLayout userName={activeProfile.name} onSignOut={handleSignOut} />;
 }
