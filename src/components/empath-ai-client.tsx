@@ -147,7 +147,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
 
   const speechRecognition = useRef<any>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = () => {
     onSignOut();
@@ -383,7 +383,15 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
   }, [toast, selectedLanguage]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // This timeout ensures that the DOM has updated before we try to scroll.
+    setTimeout(() => {
+      if (scrollAreaRef.current) {
+        const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
+        if (viewport) {
+          viewport.scrollTop = viewport.scrollHeight;
+        }
+      }
+    }, 100);
   }, [activeChat?.messages, isLoading]);
 
   const handleMicClick = () => {
@@ -645,12 +653,12 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div className="flex flex-col h-screen overflow-hidden">
+        <div className="flex flex-col h-screen">
           <header className="flex items-center justify-between p-4 border-b shrink-0">
             <div className="flex items-center gap-2">
+                <SidebarTrigger tooltip="Toggle chat history" />
                 <BrainLogo className="w-7 h-7"/>
                 <h2 className="text-lg font-semibold">CounselAI</h2>
-                <SidebarTrigger tooltip="Toggle chat history" />
             </div>
              <div className="flex items-center gap-1">
                 <ThemeToggle />
@@ -664,7 +672,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                     <Tooltip>
                         <TooltipTrigger asChild={true}>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon"><Trash2 size={20}/></Button>
+                                <Button variant="ghost" size="icon" onClick={() => {}}><Trash2 size={20}/></Button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
                         <TooltipContent><p>Delete Chats</p></TooltipContent>
@@ -694,25 +702,26 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                 </Tooltip>
              </div>
           </header>
-          <div className="flex-1 flex flex-col-reverse overflow-y-auto p-6 gap-6 min-h-0">
-            <div ref={messagesEndRef} />
-             {isLoading && <ChatMessage.Loading />}
-            {activeChat?.messages.slice().reverse().map(message => (
-              <ChatMessage 
-                key={message.id} 
-                message={message} 
-                userName={userName}
-                onSpeak={(text) => speakText(text)}
-               />
-            ))}
-            {(!activeChat || activeChat.messages.length === 0) && (
-                <div className="flex-1 flex flex-col items-center justify-center text-center">
-                    <BrainLogo className="w-24 h-24 text-primary mb-4"/>
-                    <h2 className="text-2xl font-bold">Welcome back, {userName}</h2>
-                    <p className="text-muted-foreground">Start a new conversation by typing below or using the microphone.</p>
-                </div>
-            )}
-          </div>
+          <ScrollArea className="flex-1" ref={scrollAreaRef}>
+            <div className="p-6 space-y-6">
+                {(!activeChat || activeChat.messages.length === 0) && (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center h-[calc(100vh-200px)]">
+                        <BrainLogo className="w-24 h-24 text-primary mb-4"/>
+                        <h2 className="text-2xl font-bold">Welcome back, {userName}</h2>
+                        <p className="text-muted-foreground">Start a new conversation by typing below or using the microphone.</p>
+                    </div>
+                )}
+                {activeChat?.messages.map(message => (
+                  <ChatMessage 
+                    key={message.id} 
+                    message={message} 
+                    userName={userName}
+                    onSpeak={(text) => speakText(text)}
+                   />
+                ))}
+                {isLoading && <ChatMessage.Loading />}
+            </div>
+          </ScrollArea>
           <footer className="p-4 border-t shrink-0">
             <div className="relative max-w-2xl mx-auto">
                 <Textarea
@@ -768,3 +777,5 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
     </>
   );
 }
+
+    
