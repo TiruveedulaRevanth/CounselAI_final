@@ -5,7 +5,7 @@ import { personalizeTherapyStyle } from "@/ai/flows/therapy-style-personalizatio
 import { summarizeChat } from "@/ai/flows/summarize-chat-flow";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Mic, Plus, Send, Settings, Square, Trash2, MoreHorizontal, MessageSquarePlus } from "lucide-react";
+import { LogOut, Mic, Send, Settings, Trash2, MoreHorizontal, MessageSquarePlus, Square } from "lucide-react";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import ChatMessage from "./chat-message";
 import SettingsDialog from "./settings-dialog";
@@ -21,7 +21,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarMenuAction,
-  SidebarFooter,
   SidebarSeparator,
   SidebarGroup,
   SidebarGroupLabel,
@@ -31,6 +30,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
@@ -41,11 +41,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { BrainLogo } from "./brain-logo";
 import { ThemeToggle } from "./theme-toggle";
-import { isToday, isYesterday, isWithinInterval, subDays, startOfDay } from "date-fns";
+import { isToday, isYesterday, isWithinInterval, subDays } from "date-fns";
 
 
 declare global {
@@ -470,21 +469,21 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
 
   const BulkDeleteDialog = () => (
     <AlertDialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete all
-                chat history.
-            </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkDelete}>
-                Continue
-            </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+        <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete all
+            chat history.
+        </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogAction onClick={handleBulkDelete}>
+            Continue
+        </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
     </AlertDialog>
     );
 
@@ -561,32 +560,6 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
            </SidebarGroup>
         </SidebarContent>
 
-        <SidebarFooter>
-            <SidebarSeparator/>
-            <SidebarMenu>
-                <SidebarMenuItem>
-                     <SidebarMenuButton onClick={() => setIsBulkDeleteOpen(true)} tooltip="Delete All Chats" >
-                        <Trash2/>
-                        <span>Delete all chats</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => setIsSettingsOpen(true)} tooltip="Settings">
-                        <Settings/>
-                        <span>Settings</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                   <ThemeToggle/>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                     <SidebarMenuButton onClick={handleSignOut} tooltip="Sign Out">
-                        <LogOut/>
-                        <span>Sign out</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarMenu>
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col h-screen">
@@ -596,23 +569,32 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
               <p className="text-xs text-muted-foreground">AI Model: {therapyStyles.find(s => s.prompt === therapyStyle)?.name || 'Default'}</p>
             </div>
              <div className="flex items-center gap-2">
-                { isSpeaking ? (
-                    <Button variant="outline" size="icon" onClick={handleStopSpeaking}>
-                        <Square className="h-4 w-4" />
-                    </Button>
-                ) : (
-                    <Button 
-                        variant={isListening ? "destructive" : "outline"} 
-                        size="icon" 
-                        onClick={handleMicClick}
-                    >
-                        <Mic className="h-4 w-4"/>
-                    </Button>
-                )}
-                <Button onClick={() => handleSend( userInput)} disabled={isLoading || !userInput.trim()}>
-                  <Send className="h-4 w-4 mr-2"/>
-                  Send
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <Settings className="h-5 w-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Voice & Style</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                           <ThemeToggle />
+                           <span className="ml-2">Toggle Theme</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setIsBulkDeleteOpen(true)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Delete All Chats</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleSignOut}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Sign Out</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
              </div>
           </header>
           <div className="flex-1 flex flex-col-reverse overflow-y-auto p-6 gap-6">
@@ -636,14 +618,32 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
           </div>
           <footer className="p-4 border-t">
             <div className="relative">
-              <Textarea
-                placeholder="Type your message..."
-                className="pr-16"
-                value={userInput}
-                onChange={e => setUserInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                rows={1}
-              />
+                <Textarea
+                    placeholder="Type your message..."
+                    className="pr-24"
+                    value={userInput}
+                    onChange={e => setUserInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    rows={1}
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    { isSpeaking ? (
+                        <Button variant="outline" size="icon" onClick={handleStopSpeaking}>
+                            <Square className="h-4 w-4" />
+                        </Button>
+                    ) : (
+                        <Button 
+                            variant={isListening ? "destructive" : "outline"} 
+                            size="icon" 
+                            onClick={handleMicClick}
+                        >
+                            <Mic className="h-4 w-4"/>
+                        </Button>
+                    )}
+                    <Button onClick={() => handleSend( userInput)} disabled={isLoading || !userInput.trim()}>
+                        <Send className="h-4 w-4"/>
+                    </Button>
+                </div>
             </div>
           </footer>
         </div>
@@ -651,3 +651,5 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
     </>
   );
 }
+
+    
