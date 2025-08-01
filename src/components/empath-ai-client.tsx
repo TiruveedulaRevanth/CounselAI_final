@@ -51,6 +51,7 @@ import ResourcesLibrary from "./resources-library";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import MindfulToolkitDialog from "./mindful-toolkit-dialog";
 import { User } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 
 declare global {
@@ -196,7 +197,8 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
         const remainingChats = prev.filter(c => c.id !== chatId);
         if (activeChatId === chatId) {
             if (remainingChats.length > 0) {
-                setActiveChatId(remainingChats[0].id);
+                const sortedRemaining = remainingChats.sort((a, b) => b.createdAt - a.createdAt);
+                setActiveChatId(sortedRemaining[0].id);
             } else {
                 setActiveChatId(null);
             }
@@ -359,16 +361,18 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
     if (!text.trim() || isLoading) return;
   
     let currentChatId = activeChatId;
+    let isNewChat = false;
     if (!currentChatId) {
-      const newChat: Chat = {
-        id: `chat-${Date.now()}`,
-        name: "New Chat",
-        messages: [],
-        createdAt: Date.now(),
-      };
-      setChats(prev => [newChat, ...prev]);
-      currentChatId = newChat.id;
-      setActiveChatId(newChat.id);
+        isNewChat = true;
+        const newChat: Chat = {
+          id: `chat-${Date.now()}`,
+          name: "New Chat",
+          messages: [],
+          createdAt: Date.now(),
+        };
+        setChats(prev => [newChat, ...prev]);
+        currentChatId = newChat.id;
+        setActiveChatId(newChat.id);
     }
   
     const isFirstMessage = activeChat ? activeChat.messages.length === 0 : true;
@@ -379,15 +383,16 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
       content: text,
     };
   
-    const history = activeChat ? activeChat.messages.map(({ role, content }) => ({ role, content })) : [];
-
-    setChats(prev =>
-      prev.map(chat =>
-        chat.id === currentChatId
-          ? { ...chat, messages: [...chat.messages, newUserMessage] }
-          : chat
-      )
+    // Use a function for setting state to ensure we have the latest `chats`
+    setChats(prevChats =>
+        prevChats.map(chat =>
+            chat.id === currentChatId
+            ? { ...chat, messages: [...chat.messages, newUserMessage] }
+            : chat
+        )
     );
+
+    const history = isNewChat ? [] : chats.find(c => c.id === currentChatId)?.messages.map(({ role, content }) => ({ role, content })) || [];
   
     setUserInput("");
     setIsLoading(true);
@@ -519,7 +524,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
       <Sidebar collapsible="offcanvas">
         <SidebarHeader>
            <div className="flex items-center gap-2">
-            <SidebarTrigger tooltip="Click to go back, hold to see history" />
+            <SidebarTrigger tooltip="Toggle chat history" />
             <SidebarGroupLabel className="text-lg font-bold text-foreground">Chats</SidebarGroupLabel>
           </div>
             <SidebarMenuButton
@@ -552,7 +557,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                                     </SidebarMenuButton>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <SidebarMenuAction>
+                                             <SidebarMenuAction tooltip="Chat Options">
                                                 <MoreHorizontal/>
                                             </SidebarMenuAction>
                                         </DropdownMenuTrigger>
@@ -574,12 +579,24 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
         </SidebarContent>
 
         <SidebarFooter className="p-2 space-y-2">
-            <Button variant="destructive" className="w-full justify-start gap-2" onClick={() => setIsEmergencyOpen(true)}>
-                <Heart size={16}/> Need Help?
-            </Button>
-            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => setIsLibraryOpen(true)}>
-                <Library size={16}/> Library
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="destructive" className="w-full justify-start gap-2" onClick={() => setIsEmergencyOpen(true)}>
+                        <Heart size={16}/> 
+                        <span className="group-data-[collapsible=icon]:hidden">Need Help?</span>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" align="center">Need Help?</TooltipContent>
+            </Tooltip>
+             <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start gap-2" onClick={() => setIsLibraryOpen(true)}>
+                        <Library size={16}/> 
+                        <span className="group-data-[collapsible=icon]:hidden">Library</span>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" align="center">Resources Library</TooltipContent>
+            </Tooltip>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
@@ -591,10 +608,30 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
             </div>
              <div className="flex items-center gap-1">
                 <ThemeToggle />
-                <Button variant="ghost" size="icon" onClick={() => setIsToolkitOpen(true)}><Sprout size={20}/></Button>
-                <Button variant="ghost" size="icon" onClick={() => setIsBulkDeleteOpen(true)}><Trash2 size={20}/></Button>
-                <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}><Settings size={20}/></Button>
-                <Button variant="ghost" size="icon" onClick={handleSignOut}><LogOut size={20}/></Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => setIsToolkitOpen(true)}><Sprout size={20}/></Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Mindful Toolkit</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => setIsBulkDeleteOpen(true)}><Trash2 size={20}/></Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Delete All Chats</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}><Settings size={20}/></Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Settings</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={handleSignOut}><LogOut size={20}/></Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Sign Out</p></TooltipContent>
+                </Tooltip>
              </div>
           </header>
           <div className="flex-1 flex flex-col-reverse overflow-y-auto p-6 gap-6">
@@ -628,22 +665,37 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     { isSpeaking ? (
-                        <Button variant="ghost" size="icon" onClick={handleStopSpeaking}>
-                            <Square className="h-5 w-5" />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={handleStopSpeaking}>
+                                    <Square className="h-5 w-5" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Stop Speaking</p></TooltipContent>
+                        </Tooltip>
                     ) : (
-                        <Button 
-                            variant="ghost"
-                            size="icon" 
-                            onClick={handleMicClick}
-                            className={isListening ? "text-red-500" : ""}
-                        >
-                            <Mic className="h-5 w-5"/>
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button 
+                                    variant="ghost"
+                                    size="icon" 
+                                    onClick={handleMicClick}
+                                    className={isListening ? "text-red-500" : ""}
+                                >
+                                    <Mic className="h-5 w-5"/>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Use Microphone</p></TooltipContent>
+                        </Tooltip>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => handleSend( userInput)} disabled={isLoading || !userInput.trim()}>
-                        <Send className="h-5 w-5"/>
-                    </Button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => handleSend( userInput)} disabled={isLoading || !userInput.trim()}>
+                                <Send className="h-5 w-5"/>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Send Message</p></TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
             <p className="text-xs text-muted-foreground text-center mt-2">
@@ -655,3 +707,5 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
     </>
   );
 }
+
+    

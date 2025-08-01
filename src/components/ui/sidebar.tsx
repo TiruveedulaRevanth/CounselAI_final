@@ -380,7 +380,7 @@ const SidebarFooter = React.forwardRef<
     <div
       ref={ref}
       data-sidebar="footer"
-      className={cn("mt-auto border-t", className)}
+      className={cn("mt-auto border-t border-sidebar-border", className)}
       {...props}
     />
   )
@@ -603,9 +603,11 @@ const SidebarMenuAction = React.forwardRef<
   React.ComponentProps<"button"> & {
     asChild?: boolean
     showOnHover?: boolean
+    tooltip?: string | React.ComponentProps<typeof TooltipContent>
   }
->(({ className, asChild = false, showOnHover = true, ...props }, ref) => {
+>(({ className, asChild = false, showOnHover = true, tooltip, ...props }, ref) => {
   const Comp = asChild ? Slot : "button"
+  const { isMobile, state } = useSidebar()
 
   const actionButton = (
     <Comp
@@ -625,8 +627,28 @@ const SidebarMenuAction = React.forwardRef<
       {...props}
     />
   )
+    
+  if (!tooltip) {
+    return actionButton
+  }
 
-  return actionButton
+  if (typeof tooltip === "string") {
+    tooltip = {
+      children: tooltip,
+    }
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{actionButton}</TooltipTrigger>
+      <TooltipContent
+        side="right"
+        align="center"
+        hidden={state !== "expanded" || isMobile}
+        {...tooltip}
+      />
+    </Tooltip>
+  )
 })
 SidebarMenuAction.displayName = "SidebarMenuAction"
 
@@ -767,3 +789,5 @@ export {
   SidebarTrigger,
   useSidebar,
 }
+
+    
