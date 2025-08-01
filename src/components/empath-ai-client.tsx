@@ -5,7 +5,7 @@ import { personalizeTherapyStyle } from "@/ai/flows/therapy-style-personalizatio
 import { summarizeChat } from "@/ai/flows/summarize-chat-flow";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Mic, Send, Settings, Trash2, MoreHorizontal, MessageSquarePlus, Square, Library, Sparkles } from "lucide-react";
+import { LogOut, Mic, Send, Settings, Trash2, MoreHorizontal, MessageSquarePlus, Square, Library, Sparkles, Siren } from "lucide-react";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import ChatMessage from "./chat-message";
 import SettingsDialog from "./settings-dialog";
@@ -639,25 +639,21 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
             </ScrollArea>
         </SidebarContent>
 
-        <SidebarFooter className="p-2 space-y-2">
-            <div className="flex items-center gap-3 p-2">
-                <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-destructive text-destructive-foreground font-bold">
-                        {userName ? userName.charAt(0).toUpperCase() : <User size={20} />}
-                    </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
-                    <p className="font-semibold text-sm truncate text-sidebar-foreground">{userName}</p>
-                </div>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 group-data-[collapsible=icon]:hidden" onClick={handleSignOut}>
-                            <LogOut size={16} />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" align="center">Sign Out</TooltipContent>
-                </Tooltip>
-            </div>
+        <SidebarFooter className="p-2 space-y-1">
+             <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => setIsEmergencyOpen(true)} className="text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive">
+                        <Siren />
+                        <span>Emergency</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => setIsLibraryOpen(true)}>
+                        <Library />
+                        <span>Resources</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
@@ -676,22 +672,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                   </TooltipTrigger>
                   <TooltipContent><p>Mindful Toolkit</p></TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={() => setIsEmergencyOpen(true)} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" x2="12" y1="9" y2="13"></line><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Emergency</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => setIsLibraryOpen(true)}>
-                        <Library size={20}/> 
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Resources Library</p></TooltipContent>
-                </Tooltip>
+                
                 <DropdownMenu>
                     <Tooltip>
                         <TooltipTrigger asChild={true}>
@@ -718,12 +699,29 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                   </TooltipTrigger>
                   <TooltipContent><p>Settings</p></TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild={true}>
-                    <Button variant="ghost" size="icon" onClick={handleSignOut}><LogOut size={20}/></Button>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Sign Out</p></TooltipContent>
-                </Tooltip>
+                <div className="flex items-center gap-3 p-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="flex items-center gap-2 p-1 h-auto">
+                                <Avatar className="h-8 w-8">
+                                    <AvatarFallback className="bg-destructive text-destructive-foreground font-bold">
+                                        {userName ? userName.charAt(0).toUpperCase() : <User size={20} />}
+                                    </AvatarFallback>
+                                </Avatar>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem disabled className="flex flex-col items-start gap-1">
+                                <p className="font-semibold text-sm text-foreground">{userName}</p>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={handleSignOut}>
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Sign Out</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
              </div>
           </header>
           <div className="flex-1 flex flex-col min-h-0">
@@ -803,3 +801,5 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
     </>
   );
 }
+
+    
