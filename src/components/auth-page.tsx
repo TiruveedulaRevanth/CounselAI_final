@@ -26,7 +26,18 @@ import { useToast } from "@/hooks/use-toast";
 import { BrainLogo } from "./brain-logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { User } from "lucide-react";
+import { User, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 
 export type Profile = {
@@ -185,6 +196,17 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
     const updatedProfiles = [...existingProfiles, newProfile];
     setProfiles(updatedProfiles);
     onSignInSuccess(newProfile);
+  };
+
+  const handleDeleteProfile = (profileId: string) => {
+    // Also delete associated chats
+    localStorage.removeItem(`counselai-chats-${profileId}`); 
+    const updatedProfiles = existingProfiles.filter(p => p.id !== profileId);
+    setProfiles(updatedProfiles);
+    toast({
+        title: "Profile Deleted",
+        description: "The profile has been removed.",
+    });
   };
   
   const FormSeparator = () => (
@@ -409,5 +431,3 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
     </div>
   );
 }
-
-    
