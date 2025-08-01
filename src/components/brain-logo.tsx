@@ -8,7 +8,7 @@ export const BrainLogo = ({ className }: { className?: string }) => (
     viewBox="0 0 24 24"
     fill="none"
     stroke="url(#brain-gradient)"
-    strokeWidth="1"
+    strokeWidth="0.5"
     strokeLinecap="round"
     strokeLinejoin="round"
     className={cn(className)}
@@ -20,19 +20,29 @@ export const BrainLogo = ({ className }: { className?: string }) => (
         <stop offset="100%" style={{ stopColor: '#FEDA77' }} />
       </linearGradient>
     </defs>
-    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" strokeWidth="1.5" />
-    <path d="M12,18 C15,14 15,10 12,6" strokeWidth="1.2" />
-    <path d="M12,6 C11,7 10,7.5 9,7.5" strokeWidth="1.2" />
-    <path d="M12,8 C11,9 10,9.5 9,9.5" strokeWidth="1.2" />
-    <path d="M12,10 C11,11 10,11.5 9,11.5" strokeWidth="1.2" />
-    <path d="M12,12 C11,13 10,13.5 9,13.5" strokeWidth="1.2" />
-    <path d="M12,14 C11,15 10,15.5 9,15.5" strokeWidth="1.2" />
-    <path d="M12,16 C11,17 10,17.5 9,17.5" strokeWidth="1.2" />
-    <path d="M12,6 C13,7 14,7.5 15,7.5" strokeWidth="1.2" />
-    <path d="M12,8 C13,9 14,9.5 15,9.5" strokeWidth="1.2" />
-    <path d="M12,10 C13,11 14,11.5 15,11.5" strokeWidth="1.2" />
-    <path d="M12,12 C13,13 14,13.5 15,13.5" strokeWidth="1.2" />
-    <path d="M12,14 C13,15 14,15.5 15,15.5" strokeWidth="1.2" />
-    <path d="M12,16 C13,17 14,17.5 15,17.5" strokeWidth="1.2" />
+    <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z" strokeWidth="1" />
+    <g transform="translate(1, 2) scale(0.8)">
+      <path d="M12.5,4 C11.5,8.5 10,13 8,18.5" strokeWidth="1" />
+      <path d="M12.4,4.2 C14,5 15,6 16.5,6.5" />
+      <path d="M15.5,6.8 C14.5,7.5 13.5,8.5 13,9.5" />
+      <path d="M11.8,7 C13.5,7.8 14.5,8.8 15.5,9.5" />
+      <path d="M14.8,9.8 C14,10.5 13,11.2 12.5,12" />
+      <path d="M11,9.5 C12.5,10.2 13.5,11, 14.5,11.8" />
+      <path d="M14,12 C13,12.8 12,13.5 11.5,14.2" />
+      <path d="M10.5,12 C11.5,12.5 12.5,13.2 13.5,13.8" />
+      <path d="M13,14 C12,14.8 11,15.5 10.5,16.2" />
+      <path d="M9.8,14.5 C10.8,15 11.8,15.5 12.8,16" />
+      <path d="M12.2,16.2 C11.2,17 10.2,17.5 9.5,18.2" />
+      <path d="M11,4.5 C9,5.5 8,6.5 6.5,7" />
+      <path d="M7.5,7.5 C8.5,8 9.5,9 10,10" />
+      <path d="M10.8,6.8 C9,7.5 8,8.5 7,9.2" />
+      <path d="M8,9.5 C9,10.2 10,11 10.5,11.8" />
+      <path d="M10,9.2 C8.5,10 7.5,10.8 6.5,11.5" />
+      <path d="M7.5,11.8 C8.5,12.5 9.5,13.2 10,14" />
+      <path d="M9.5,11.5 C8,12.2 7,13 6,13.8" />
+      <path d="M7,14 C8,14.8 9,15.5 9.5,16.2" />
+      <path d="M8.8,13.8 C7.5,14.5 6.5,15.2 5.5,16" />
+      <path d="M6.5,16.2 C7.5,17 8.5,17.8 9,18.5" />
+    </g>
   </svg>
 );
