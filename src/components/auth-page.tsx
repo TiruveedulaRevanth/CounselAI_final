@@ -68,13 +68,17 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
   const { toast } = useToast();
   const [authMode, setAuthMode] = useState<"initial" | "login" | "signup">("initial");
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // This effect runs on the client and determines the initial auth mode.
+    // It prevents hydration mismatch by ensuring server and client render the same initial null state.
     if (existingProfiles.length === 0) {
         setAuthMode("signup");
     } else {
         setAuthMode("initial");
     }
+    setIsLoading(false);
   }, [existingProfiles]);
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
@@ -126,180 +130,192 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
   const FormSeparator = () => (
     <div className="flex items-center my-6">
         <div className="flex-grow border-t border-border"></div>
-        <span className="flex-shrink mx-4 text-xs font-semibold text-muted-foreground">OR</span>
+        <span className="flex-shrink mx-4 text-xs font-semibold text-muted-foreground uppercase">Or</span>
         <div className="flex-grow border-t border-border"></div>
     </div>
   );
 
   const renderInitial = () => (
-    <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-            <BrainLogo className="w-16 h-16 mx-auto text-primary mb-4"/>
-            <CardTitle className="text-3xl">Welcome to CounselAI</CardTitle>
-            <CardDescription>Select a profile to continue or create a new one.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-           {existingProfiles.map(profile => (
-            <Button key={profile.id} variant="secondary" size="lg" className="w-full justify-start gap-4 h-14" onClick={() => handleProfileSelect(profile)}>
-                 <Avatar className="h-9 w-9">
-                    <AvatarFallback className="bg-destructive text-destructive-foreground font-bold">
-                        {profile.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                </Avatar>
-                <div className="text-left">
-                    <p className="font-bold">{profile.name}</p>
-                    <p className="text-sm text-muted-foreground -mt-1">{profile.email}</p>
-                </div>
-            </Button>
-           ))}
-            <Button size="lg" className="w-full mt-2" onClick={() => setAuthMode("signup")}>
-                <UserPlus className="mr-2 h-5 w-5"/>
-                Create New Profile
-            </Button>
-        </CardContent>
-    </Card>
+    <div className="w-full max-w-sm">
+        <Card>
+            <CardHeader className="text-center">
+                <BrainLogo className="w-16 h-16 mx-auto text-primary mb-4"/>
+                <CardTitle className="text-3xl">Welcome back</CardTitle>
+                <CardDescription>Select a profile to continue.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+            {existingProfiles.map(profile => (
+                <Button key={profile.id} variant="secondary" size="lg" className="w-full justify-start gap-4 h-14" onClick={() => handleProfileSelect(profile)}>
+                    <Avatar className="h-9 w-9">
+                        <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                            {profile.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
+                    <div className="text-left">
+                        <p className="font-bold">{profile.name}</p>
+                        <p className="text-sm text-muted-foreground -mt-1">{profile.email}</p>
+                    </div>
+                </Button>
+            ))}
+            </CardContent>
+        </Card>
+        <Card className="mt-4">
+            <CardContent className="p-4 flex items-center justify-center text-sm">
+                <p>Want to use a different account?</p>
+                <Button variant="link" className="p-1" onClick={() => setAuthMode("signup")}>
+                    Create New Profile
+                </Button>
+            </CardContent>
+        </Card>
+    </div>
   );
 
   const renderLogin = () => (
-    <div>
-        <div className="w-full max-w-sm border border-border rounded-lg p-8">
-            <div className="flex flex-col items-center text-center">
+     <div className="w-full max-w-sm">
+        <Card>
+            <CardHeader className="items-center text-center">
                  <Avatar className="h-24 w-24 mb-4">
-                    <AvatarFallback className="bg-destructive text-destructive-foreground font-bold text-4xl">
+                    <AvatarFallback className="bg-primary/20 text-primary font-bold text-4xl">
                         {selectedProfile?.name.charAt(0).toUpperCase() ?? <User size={20} />}
                     </AvatarFallback>
                 </Avatar>
-            </div>
-            
-            <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-3 mt-6">
-                     <FormField
-                        control={loginForm.control}
-                        name="email"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <Input placeholder="Email" {...field} readOnly className="bg-muted text-center text-muted-foreground" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={loginForm.control}
-                        name="password"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <Input type="password" placeholder="Password" {...field} autoFocus className="text-center"/>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <Button type="submit" className="w-full !mt-4">Log In</Button>
-                </form>
-            </Form>
-        </div>
-        <div className="w-full max-w-sm border border-border rounded-lg p-6 mt-4 text-center">
-            <p className="text-sm">
-                Not {selectedProfile?.name}? 
-                <Button variant="link" className="p-1" onClick={() => { setAuthMode("initial"); setSelectedProfile(null); }}>
-                    Use another account
-                </Button>
-            </p>
-        </div>
+                 <CardTitle className="text-2xl">{selectedProfile?.name}</CardTitle>
+                 <CardDescription>{selectedProfile?.email}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...loginForm}>
+                    <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-3">
+                        <FormField
+                            control={loginForm.control}
+                            name="password"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Input type="password" placeholder="Password" {...field} autoFocus className="text-center"/>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="submit" className="w-full !mt-4">Log In</Button>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+        <Card className="mt-4">
+            <CardContent className="p-4 text-center">
+                <p className="text-sm">
+                    Not {selectedProfile?.name}?{' '}
+                    <Button variant="link" className="p-1 h-auto" onClick={() => { setAuthMode("initial"); setSelectedProfile(null); }}>
+                        Use another account
+                    </Button>
+                </p>
+            </CardContent>
+        </Card>
     </div>
   );
 
   const renderSignUp = () => (
-    <div>
-        <div className="w-full max-w-sm border border-border rounded-lg p-8">
-            <div className="text-center mb-6">
-                <BrainLogo className="w-12 h-12 mx-auto text-primary mb-4"/>
-                <h2 className="font-semibold text-muted-foreground">Sign up to start your journey with CounselAI.</h2>
-            </div>
-            
-            <FormSeparator />
+    <div className="w-full max-w-sm">
+        <div className="p-1 rounded-xl bg-gradient-to-br from-[#8134AF] via-[#DD2A7B] to-[#FEDA77]">
+            <div className="w-full bg-background rounded-lg p-8">
+                <div className="text-center mb-6">
+                    <BrainLogo className="w-12 h-12 mx-auto text-primary mb-4"/>
+                    <h2 className="font-semibold text-muted-foreground">Sign up to start your journey with CounselAI.</h2>
+                </div>
+                
+                <FormSeparator />
 
-            <Form {...signUpForm}>
-                <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-3">
-                     <FormField
-                        control={signUpForm.control}
-                        name="name"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <Input placeholder="Full Name" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={signUpForm.control}
-                        name="email"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <Input placeholder="Email address (@gmail.com)" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={signUpForm.control}
-                        name="phone"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <Input placeholder="Phone number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={signUpForm.control}
-                        name="password"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <Input type="password" placeholder="Password" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={signUpForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <Input type="password" placeholder="Confirm Password" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <Button type="submit" className="w-full !mt-6">Sign Up</Button>
-                </form>
-            </Form>
+                <Form {...signUpForm}>
+                    <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-3">
+                        <FormField
+                            control={signUpForm.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Input placeholder="Full Name" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={signUpForm.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Input placeholder="Email address (@gmail.com)" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={signUpForm.control}
+                            name="phone"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Input placeholder="Phone number" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={signUpForm.control}
+                            name="password"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Input type="password" placeholder="Password" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={signUpForm.control}
+                            name="confirmPassword"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Input type="password" placeholder="Confirm Password" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="submit" className="w-full !mt-6 text-white font-bold bg-gradient-to-r from-[#8134AF] via-[#DD2A7B] to-[#FEDA77] hover:from-[#8134AF]/90 hover:via-[#DD2A7B]/90 hover:to-[#FEDA77]/90">
+                            Sign Up
+                        </Button>
+                    </form>
+                </Form>
+            </div>
         </div>
-         <div className="w-full max-w-sm border border-border rounded-lg p-6 mt-4 text-center">
-            <p className="text-sm">
-                Have an account? 
-                <Button variant="link" className="p-1" onClick={() => { setAuthMode("initial"); setSelectedProfile(null); }}>
-                   Log in
-                </Button>
-            </p>
-        </div>
+         <Card className="mt-4">
+            <CardContent className="p-4 text-center">
+                 <p className="text-sm">
+                    Have an account?{' '}
+                    <Button variant="link" className="p-1 h-auto" onClick={() => { setAuthMode("initial"); setSelectedProfile(null); }}>
+                    Log in
+                    </Button>
+                </p>
+            </CardContent>
+        </Card>
     </div>
   )
 
   const getAuthContent = () => {
+    if (isLoading) {
+        return (
+             <div className="flex items-center justify-center min-h-[400px]">
+                <p className="text-muted-foreground">Loading profiles...</p>
+             </div>
+        );
+    }
     switch (authMode) {
         case "initial":
             return renderInitial();
@@ -308,7 +324,7 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
         case "signup":
             return renderSignUp();
         default:
-            return null;
+            return renderSignUp(); // Default to signup if no profiles exist
     }
   }
 
