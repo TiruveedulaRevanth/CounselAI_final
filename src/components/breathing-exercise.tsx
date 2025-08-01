@@ -40,21 +40,21 @@ export default function BreathingExercise() {
       <CardContent className="flex flex-col items-center justify-center gap-8 pt-4">
         <div className="relative flex h-48 w-48 items-center justify-center">
           <div
-            className={`absolute h-full w-full rounded-full bg-primary/20 transition-transform duration-[4000ms] ease-in-out ${
+            className={`absolute h-full w-full rounded-full bg-primary/20 transition-transform ease-in-out duration-[4000ms] ${
               isAnimating && instruction === "Breathe in..."
                 ? "scale-100"
                 : "scale-50"
             }`}
           />
           <div
-            className={`absolute h-3/4 w-3/4 rounded-full bg-primary/40 transition-transform duration-[4000ms] ease-in-out ${
+            className={`absolute h-3/4 w-3/4 rounded-full bg-primary/40 transition-transform ease-in-out duration-[4000ms] ${
               isAnimating && instruction === "Breathe in..."
                 ? "scale-100"
                 : "scale-50"
             }`}
           />
           <div
-            className={`absolute h-1/2 w-1/2 rounded-full bg-primary transition-transform duration-[4000ms] ease-in-out ${
+            className={`absolute h-1/2 w-1/2 rounded-full bg-primary transition-transform ease-in-out duration-[4000ms] ${
               isAnimating && instruction === "Breathe in..."
                 ? "scale-100"
                 : "scale-50"
