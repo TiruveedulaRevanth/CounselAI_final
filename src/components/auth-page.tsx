@@ -172,36 +172,40 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
 
   const renderLogin = () => (
      <div className="w-full max-w-sm">
-        <Card>
-            <CardHeader className="items-center text-center">
-                 <Avatar className="h-24 w-24 mb-4">
-                    <AvatarFallback className="bg-primary/20 text-primary font-bold text-4xl">
-                        {selectedProfile?.name.charAt(0).toUpperCase() ?? <User size={20} />}
-                    </AvatarFallback>
-                </Avatar>
-                 <CardTitle className="text-2xl">{selectedProfile?.name}</CardTitle>
-                 <CardDescription>{selectedProfile?.email}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...loginForm}>
-                    <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-3">
-                        <FormField
-                            control={loginForm.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <Input type="password" placeholder="Password" {...field} autoFocus className="text-center"/>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <Button type="submit" className="w-full !mt-4">Log In</Button>
-                    </form>
-                </Form>
-            </CardContent>
-        </Card>
+        <div className="p-1 rounded-xl bg-gradient-to-br from-[#8134AF] via-[#DD2A7B] to-[#FEDA77]">
+            <Card className="border-none">
+                <CardHeader className="items-center text-center">
+                    <Avatar className="h-24 w-24 mb-4">
+                        <AvatarFallback className="bg-primary/20 text-primary font-bold text-4xl">
+                            {selectedProfile?.name.charAt(0).toUpperCase() ?? <User size={20} />}
+                        </AvatarFallback>
+                    </Avatar>
+                    <CardTitle className="text-2xl">{selectedProfile?.name}</CardTitle>
+                    <CardDescription>{selectedProfile?.email}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Form {...loginForm}>
+                        <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-3">
+                            <FormField
+                                control={loginForm.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input type="password" placeholder="Password" {...field} autoFocus className="text-center"/>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="submit" className="w-full !mt-4 text-white font-bold bg-gradient-to-r from-[#8134AF] via-[#DD2A7B] to-[#FEDA77] hover:from-[#8134AF]/90 hover:via-[#DD2A7B]/90 hover:to-[#FEDA77]/90">
+                                Log In
+                            </Button>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
+        </div>
         <Card className="mt-4">
             <CardContent className="p-4 text-center">
                 <p className="text-sm">
@@ -334,3 +338,5 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
     </div>
   );
 }
+
+    
