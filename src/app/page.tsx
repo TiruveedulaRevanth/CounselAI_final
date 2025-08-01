@@ -45,10 +45,12 @@ export default function Home() {
     localStorage.setItem("counselai-active-profile-id", profile.id);
     
     // Avoid duplicates when signing in with an existing profile
-    const existingProfiles = profiles.filter(p => p.id !== profile.id);
-    const updatedProfiles = [...existingProfiles, profile];
+    const existingProfile = profiles.find(p => p.id === profile.id);
+    if (!existingProfile) {
+        const updatedProfiles = [...profiles, profile];
+        setProfiles(updatedProfiles);
+    }
     
-    setProfiles(updatedProfiles);
     setActiveProfile(profile);
   };
   
@@ -56,6 +58,14 @@ export default function Home() {
     localStorage.removeItem("counselai-active-profile-id");
     setActiveProfile(null);
   }
+
+  const handleSetProfiles = (updatedProfiles: Profile[]) => {
+    setProfiles(updatedProfiles);
+    // If the active profile was deleted, sign out.
+    if (activeProfile && !updatedProfiles.some(p => p.id === activeProfile.id)) {
+        handleSignOut();
+    }
+  };
 
   // Render a loading state on both server and client initially
   if (isLoading) {
@@ -68,7 +78,7 @@ export default function Home() {
   }
 
   if (!activeProfile) {
-    return <AuthPage onSignInSuccess={handleSignInSuccess} existingProfiles={profiles} setProfiles={setProfiles} />;
+    return <AuthPage onSignInSuccess={handleSignInSuccess} existingProfiles={profiles} setProfiles={handleSetProfiles} />;
   }
 
   return <AppLayout activeProfile={activeProfile} onSignOut={handleSignOut} />;

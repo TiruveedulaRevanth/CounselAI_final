@@ -19,14 +19,26 @@ import { useToast } from "@/hooks/use-toast";
 import { BrainLogo } from "./brain-logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { User, UserPlus } from "lucide-react";
+import { User, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Separator } from "./ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
 
 export type Profile = {
   id: string;
   name: string;
   email: string;
+  phone: string;
   password?: string; // Should be hashed in a real app
 }
 
@@ -49,13 +61,20 @@ const passwordValidation = z.string()
     .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character");
 
 
-const signUpSchema = z.object({
+const createSignUpSchema = (existingProfiles: Profile[]) => z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address").refine(val => val.endsWith('@gmail.com'), {
-      message: "Only Gmail addresses are allowed",
-  }),
+  email: z.string().email("Invalid email address")
+    .refine(val => val.endsWith('@gmail.com'), {
+        message: "Only Gmail addresses are allowed",
+    })
+    .refine(email => !existingProfiles.some(p => p.email === email), {
+        message: "This email is already registered.",
+    }),
   phone: z.string().regex(/^[6-9]\d{9}$/, {
       message: "Phone number must be a valid 10-digit Indian number.",
+  })
+  .refine(phone => !existingProfiles.some(p => p.phone === phone), {
+      message: "This phone number is already registered.",
   }),
   password: passwordValidation,
   confirmPassword: z.string(),
@@ -70,6 +89,9 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
   const [authMode, setAuthMode] = useState<"initial" | "login" | "signup">("initial");
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileToDelete, setProfileToDelete] = useState<Profile | null>(null);
+
+  const signUpSchema = createSignUpSchema(existingProfiles);
 
   useEffect(() => {
     // This effect runs on the client and determines the initial auth mode.
@@ -110,6 +132,10 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
             title: "Login Failed",
             description: "Invalid password. Please try again.",
         });
+        loginForm.setError("password", {
+            type: "manual",
+            message: "Invalid password. Please try again.",
+        });
     }
   };
   
@@ -119,6 +145,7 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
         id: `profile-${Date.now()}`,
         name: values.name,
         email: values.email,
+        phone: values.phone,
         password: values.password, // Storing password for login check
     };
     toast({
@@ -135,6 +162,26 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
     setSelectedProfile(profile);
     loginForm.setValue("email", profile.email);
     setAuthMode("login");
+  }
+
+  const handleDeleteProfile = (profile: Profile) => {
+    // Remove profile from state
+    const updatedProfiles = existingProfiles.filter(p => p.id !== profile.id);
+    setProfiles(updatedProfiles);
+    
+    // Remove associated chat history from local storage
+    localStorage.removeItem(`counselai-chats-${profile.id}`);
+
+    // If the deleted profile was the one selected for login, reset the view
+    if (selectedProfile?.id === profile.id) {
+        setSelectedProfile(null);
+        setAuthMode('initial');
+    }
+
+    toast({
+        title: "Profile Deleted",
+        description: `The profile for ${profile.name} has been removed.`,
+    });
   }
   
   const FormSeparator = () => (
@@ -156,27 +203,50 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
             {existingProfiles.map(profile => (
-                <Button key={profile.id} variant="secondary" size="lg" className="w-full justify-start gap-4 h-14" onClick={() => handleProfileSelect(profile)}>
-                    <Avatar className="h-9 w-9">
-                        <AvatarFallback className="bg-primary/20 text-primary font-bold">
-                            {profile.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                        <p className="font-bold">{profile.name}</p>
-                        <p className="text-sm text-muted-foreground -mt-1">{profile.email}</p>
-                    </div>
-                </Button>
+                <div key={profile.id} className="flex items-center gap-2">
+                    <Button variant="secondary" size="lg" className="w-full justify-start gap-4 h-14" onClick={() => handleProfileSelect(profile)}>
+                        <Avatar className="h-9 w-9">
+                            <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                                {profile.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="text-left">
+                            <p className="font-bold">{profile.name}</p>
+                            <p className="text-sm text-muted-foreground -mt-1">{profile.email}</p>
+                        </div>
+                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
+                                <Trash2 size={16} />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the profile for "{profile.name}" and all associated chat history.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteProfile(profile)}>
+                                    Delete
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
             ))}
             </CardContent>
         </Card>
       </div>
-        <div className="mt-4 bg-card rounded-lg border p-4 flex items-center justify-center text-sm">
+      <div className="mt-4 bg-card rounded-lg border p-4 flex items-center justify-center text-sm">
             <p>Want to use a different account?</p>
             <Button variant="link" className="p-1 h-auto" onClick={() => setAuthMode("signup")}>
                 Create New Profile
             </Button>
-        </div>
+      </div>
     </div>
   );
 
@@ -307,14 +377,16 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
                 </Form>
             </div>
         </div>
-         <div className="mt-4 bg-card rounded-lg border p-4 text-center">
-             <p className="text-sm">
-                Have an account?{' '}
-                <Button variant="link" className="p-1 h-auto" onClick={() => { setAuthMode("initial"); setSelectedProfile(null); }}>
-                Log in
-                </Button>
-            </p>
-        </div>
+        {existingProfiles.length > 0 && (
+            <div className="mt-4 bg-card rounded-lg border p-4 text-center">
+                <p className="text-sm">
+                    Have an account?{' '}
+                    <Button variant="link" className="p-1 h-auto" onClick={() => { setAuthMode("initial"); setSelectedProfile(null); }}>
+                        Log in
+                    </Button>
+                </p>
+            </div>
+        )}
     </div>
   )
 
@@ -328,7 +400,7 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
     }
     switch (authMode) {
         case "initial":
-            return renderInitial();
+            return existingProfiles.length > 0 ? renderInitial() : renderSignUp();
         case "login":
             return renderLogin();
         case "signup":
@@ -344,5 +416,3 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
     </div>
   );
 }
-
-    
