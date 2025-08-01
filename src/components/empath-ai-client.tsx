@@ -822,7 +822,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
           <div className="flex-1 flex flex-col min-h-0">
              <ScrollArea className="flex-1" ref={scrollAreaRef}>
                 <div className="p-6 space-y-6">
-                    {(!activeChat || activeChat.messages.length === 0) && (
+                    {(!activeChat || activeChat.messages.length === 0) && !isLoading && (
                         <div className="flex-1 flex flex-col items-center justify-center text-center h-[calc(100vh-200px)]">
                             <BrainLogo className="w-24 h-24 text-primary mb-4"/>
                             <h2 className="text-2xl font-bold">Welcome back, {userName}</h2>

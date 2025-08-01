@@ -71,9 +71,9 @@ const Loading = () => (
                 <BrainLogo />
             </AvatarFallback>
         </Avatar>
-        <div className="flex-1">
+        <div className="flex flex-col">
             <p className="font-bold mb-1">CounselAI</p>
-            <div className="flex items-center gap-1.5 py-2">
+            <div className="p-3 rounded-lg bg-assistant-bubble flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-muted-foreground animate-pulse" style={{ animationDelay: '0ms' }} />
                 <span className="h-2 w-2 rounded-full bg-muted-foreground animate-pulse" style={{ animationDelay: '200ms' }} />
                 <span className="h-2 w-2 rounded-full bg-muted-foreground animate-pulse" style={{ animationDelay: '400ms' }} />
