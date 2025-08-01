@@ -27,6 +27,7 @@ export type Profile = {
   id: string;
   name: string;
   email: string;
+  password?: string; // Should be hashed in a real app
 }
 
 interface AuthPageProps {
@@ -92,16 +93,24 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
   });
 
   const handleLogin = (values: z.infer<typeof loginSchema>) => {
-    // In a real app, you'd call an API here to verify password.
-    // For this prototype, we'll assume it's correct.
     if (!selectedProfile) return;
-    
-    console.log("Login submitted for:", selectedProfile.email, "with password:", values.password);
-    toast({
-        title: "Login Successful",
-        description: `Welcome back, ${selectedProfile.name}!`,
-    });
-    onSignInSuccess(selectedProfile);
+
+    // In a real app, you'd call an API here to verify a hashed password.
+    // For this prototype, we'll do a simple string comparison.
+    if (values.password === selectedProfile.password) {
+        console.log("Login submitted for:", selectedProfile.email, "with password:", values.password);
+        toast({
+            title: "Login Successful",
+            description: `Welcome back, ${selectedProfile.name}!`,
+        });
+        onSignInSuccess(selectedProfile);
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Invalid password. Please try again.",
+        });
+    }
   };
   
   const handleSignUp = (values: z.infer<typeof signUpSchema>) => {
@@ -110,6 +119,7 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
         id: `profile-${Date.now()}`,
         name: values.name,
         email: values.email,
+        password: values.password, // Storing password for login check
     };
     toast({
         title: "Sign Up Successful",
@@ -137,7 +147,8 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
 
   const renderInitial = () => (
     <div className="w-full max-w-sm">
-        <Card>
+      <div className="p-1 rounded-xl bg-gradient-to-br from-[#8134AF] via-[#DD2A7B] to-[#FEDA77]">
+        <Card className="border-none">
             <CardHeader className="text-center">
                 <BrainLogo className="w-16 h-16 mx-auto text-primary mb-4"/>
                 <CardTitle className="text-3xl">Welcome back</CardTitle>
@@ -159,6 +170,7 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
             ))}
             </CardContent>
         </Card>
+      </div>
         <Card className="mt-4">
             <CardContent className="p-4 flex items-center justify-center text-sm">
                 <p>Want to use a different account?</p>

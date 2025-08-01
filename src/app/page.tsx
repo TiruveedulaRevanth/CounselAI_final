@@ -34,6 +34,13 @@ export default function Home() {
     }
   }, []);
 
+  // Persist profiles to local storage whenever they change
+  useEffect(() => {
+    if (!isLoading) {
+      localStorage.setItem("counselai-profiles", JSON.stringify(profiles));
+    }
+  }, [profiles, isLoading]);
+
   const handleSignInSuccess = (profile: Profile) => {
     localStorage.setItem("counselai-active-profile-id", profile.id);
     
@@ -42,7 +49,6 @@ export default function Home() {
     const updatedProfiles = [...existingProfiles, profile];
     
     setProfiles(updatedProfiles);
-    localStorage.setItem("counselai-profiles", JSON.stringify(updatedProfiles));
     setActiveProfile(profile);
   };
   
@@ -67,3 +73,5 @@ export default function Home() {
 
   return <AppLayout userName={activeProfile.name} onSignOut={handleSignOut} />;
 }
+
+    
