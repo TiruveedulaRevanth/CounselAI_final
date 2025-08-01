@@ -547,8 +547,8 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
           </div>
         </SidebarHeader>
         <SidebarContent className="flex-1">
-          <ScrollArea className="h-full" dir="rtl">
-            <div dir="ltr" className="px-2">
+          <ScrollArea className="h-full">
+            <div className="px-2">
                  {groupedChats.map(([groupName, groupChats]) => (
                     <SidebarGroup key={groupName}>
                         <SidebarGroupLabel>{groupName}</SidebarGroupLabel>
@@ -680,7 +680,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                         <Mic className="h-4 w-4"/>
                     </Button>
                 )}
-                <Button onClick={() => handleSend(userInput)} disabled={isLoading || !userInput.trim()}>
+                <Button onClick={() => handleSend( userInput)} disabled={isLoading || !userInput.trim()}>
                   <Send className="h-4 w-4 mr-2"/>
                   Send
                 </Button>
