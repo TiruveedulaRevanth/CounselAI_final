@@ -301,59 +301,6 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 font-sans">
         <div className="flex flex-col items-center w-full max-w-sm">
          {getAuthContent()}
-         {authMode === 'initial' && existingProfiles.length > 0 && (
-            <div className="w-full mt-8">
-                <div className="bg-card rounded-lg border p-4 space-y-3">
-                {existingProfiles.map(p => (
-                    <div key={p.id} className="flex items-center justify-between">
-                         <div className="flex items-center gap-3">
-                            <Avatar>
-                                <AvatarFallback className="bg-primary/20 text-primary font-bold">
-                                    {p.name.charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="font-semibold">{p.name}</p>
-                                <p className="text-sm text-muted-foreground">{p.phone}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                                        <Trash2 size={16} />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete the profile for {p.name} and all associated chat history.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteProfile(p.id)}>
-                                        Delete
-                                    </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                            <Button size="sm" onClick={() => {
-                                 toast({
-                                    title: "Login Successful",
-                                    description: `Welcome back, ${p.name}!`,
-                                });
-                                onSignInSuccess(p)
-                            }}>
-                                Log In
-                            </Button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-            </div>
-         )}
         </div>
     </div>
   );
