@@ -678,7 +678,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                     <Tooltip>
                         <TooltipTrigger asChild={true}>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => {}}><Trash2 size={20}/></Button>
+                                <Button variant="ghost" size="icon" className="hover:bg-destructive/10 hover:text-destructive" onClick={() => {}}><Trash2 size={20}/></Button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
                         <TooltipContent><p>Delete Chats</p></TooltipContent>
@@ -688,7 +688,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
                         <DropdownMenuItem onClick={() => openDeleteDialog('week')}>Delete Last 7 Days' Chats</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => openDeleteDialog('month')}>Delete Last 30 Days' Chats</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => openDeleteDialog('all')} className="text-destructive">
+                        <DropdownMenuItem onClick={() => openDeleteDialog('all')} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                             Delete All Chats
                         </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -785,5 +785,3 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
     </>
   );
 }
-
-    
