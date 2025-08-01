@@ -51,6 +51,7 @@ import MindfulToolkitDialog from "./mindful-toolkit-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "./ui/tooltip";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { User } from "lucide-react";
+import type { Profile } from "./auth-page";
 
 
 declare global {
@@ -119,12 +120,12 @@ export const supportedLanguages = [
 
 
 interface EmpathAIClientProps {
-    userName: string | null;
+    activeProfile: Profile;
     onSignOut: () => void;
 }
 
 
-export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientProps) {
+export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAIClientProps) {
   const { toast } = useToast();
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -150,6 +151,9 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
 
   const speechRecognition = useRef<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const userName = activeProfile.name;
+  const storageKey = useMemo(() => `counselai-chats-${activeProfile.id}`, [activeProfile.id]);
+
 
   const handleSignOut = () => {
     onSignOut();
@@ -160,7 +164,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
   // Load chats from local storage on initial render
   useEffect(() => {
     try {
-      const savedChats = localStorage.getItem("counselai-chats");
+      const savedChats = localStorage.getItem(storageKey);
       if (savedChats) {
         const parsedChats = JSON.parse(savedChats) as Chat[];
         const chatsWithTimestamps = parsedChats.map(c => ({...c, createdAt: c.createdAt || Date.now() }));
@@ -169,21 +173,26 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
         if (chatsWithTimestamps.length > 0) {
            const sortedChats = chatsWithTimestamps.sort((a, b) => b.createdAt - a.createdAt);
            setActiveChatId(sortedChats[0].id);
+        } else {
+           setActiveChatId(null);
         }
+      } else {
+        setChats([]);
+        setActiveChatId(null);
       }
     } catch (error) {
       console.error("Failed to load chats from local storage:", error);
     }
-  }, []);
+  }, [storageKey]);
 
   // Save chats to local storage whenever they change
   useEffect(() => {
     if (chats.length > 0) {
-      localStorage.setItem("counselai-chats", JSON.stringify(chats));
+      localStorage.setItem(storageKey, JSON.stringify(chats));
     } else {
-      localStorage.removeItem("counselai-chats");
+      localStorage.removeItem(storageKey);
     }
-  }, [chats]);
+  }, [chats, storageKey]);
   
   const createNewChat = () => {
     const newChat: Chat = {
@@ -418,7 +427,7 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
   
     let currentChatId = activeChatId;
     let isNewChat = false;
-    if (!currentChatId) {
+    if (!currentChatId || !activeChat) {
         isNewChat = true;
         const newChat: Chat = {
           id: `chat-${Date.now()}`,

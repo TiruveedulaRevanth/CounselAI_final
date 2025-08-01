@@ -71,7 +71,5 @@ export default function Home() {
     return <AuthPage onSignInSuccess={handleSignInSuccess} existingProfiles={profiles} setProfiles={setProfiles} />;
   }
 
-  return <AppLayout userName={activeProfile.name} onSignOut={handleSignOut} />;
+  return <AppLayout activeProfile={activeProfile} onSignOut={handleSignOut} />;
 }
-
-    

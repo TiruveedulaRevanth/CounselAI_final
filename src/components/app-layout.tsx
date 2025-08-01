@@ -3,16 +3,17 @@
 
 import { SidebarProvider } from "@/components/ui/sidebar";
 import EmpathAIClient from "./empath-ai-client";
+import type { Profile } from "./auth-page";
 
 interface AppLayoutProps {
-    userName: string | null;
+    activeProfile: Profile;
     onSignOut: () => void;
 }
 
-export default function AppLayout({ userName, onSignOut }: AppLayoutProps) {
+export default function AppLayout({ activeProfile, onSignOut }: AppLayoutProps) {
     return (
         <SidebarProvider collapsible="offcanvas">
-            <EmpathAIClient userName={userName} onSignOut={onSignOut} />
+            <EmpathAIClient activeProfile={activeProfile} onSignOut={onSignOut} />
         </SidebarProvider>
     );
 }
