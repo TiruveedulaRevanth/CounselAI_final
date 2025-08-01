@@ -64,8 +64,11 @@ const passwordValidation = z.string()
 const createSignUpSchema = (existingProfiles: Profile[]) => z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address")
-    .refine(val => val.endsWith('@gmail.com'), {
-        message: "Only Gmail addresses are allowed",
+    .refine(val => {
+        const allowedDomains = ['@gmail.com', '@yahoo.com', '@outlook.com'];
+        return allowedDomains.some(domain => val.endsWith(domain));
+    }, {
+        message: "Please use a valid email from Gmail, Yahoo, or Outlook.",
     })
     .refine(email => !existingProfiles.some(p => p.email === email), {
         message: "This email is already registered.",
@@ -328,7 +331,7 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
                             render={({ field }) => (
                                 <FormItem>
                                     <FormControl>
-                                        <Input placeholder="Email address (@gmail.com)" {...field} />
+                                        <Input placeholder="Email address" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
