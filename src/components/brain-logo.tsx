@@ -21,13 +21,18 @@ export const BrainLogo = ({ className }: { className?: string }) => (
       </linearGradient>
     </defs>
     <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" strokeWidth="1.5" />
-    <path d="M12 20C12 20 12 11 17 6" />
-    <path d="M12 20C12 20 12 11 7 6" />
-    <path d="M15.5 8C15.5 8 14 11 12 11.5" />
-    <path d="M8.5 8C8.5 8 10 11 12 11.5" />
-    <path d="M14 13C14 13 13 15 12 15.25" />
-    <path d="M10 13C10 13 11 15 12 15.25" />
-    <path d="M13 17.5C13 17.5 12.5 17.5 12 17.5" />
-    <path d="M11 17.5C11 17.5 11.5 17.5 12 17.5" />
+    <path d="M12,18 C15,14 15,10 12,6" strokeWidth="1.2" />
+    <path d="M12,6 C11,7 10,7.5 9,7.5" strokeWidth="1.2" />
+    <path d="M12,8 C11,9 10,9.5 9,9.5" strokeWidth="1.2" />
+    <path d="M12,10 C11,11 10,11.5 9,11.5" strokeWidth="1.2" />
+    <path d="M12,12 C11,13 10,13.5 9,13.5" strokeWidth="1.2" />
+    <path d="M12,14 C11,15 10,15.5 9,15.5" strokeWidth="1.2" />
+    <path d="M12,16 C11,17 10,17.5 9,17.5" strokeWidth="1.2" />
+    <path d="M12,6 C13,7 14,7.5 15,7.5" strokeWidth="1.2" />
+    <path d="M12,8 C13,9 14,9.5 15,9.5" strokeWidth="1.2" />
+    <path d="M12,10 C13,11 14,11.5 15,11.5" strokeWidth="1.2" />
+    <path d="M12,12 C13,13 14,13.5 15,13.5" strokeWidth="1.2" />
+    <path d="M12,14 C13,15 14,15.5 15,15.5" strokeWidth="1.2" />
+    <path d="M12,16 C13,17 14,17.5 15,17.5" strokeWidth="1.2" />
   </svg>
 );
