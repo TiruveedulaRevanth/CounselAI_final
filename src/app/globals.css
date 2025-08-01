@@ -37,13 +37,13 @@ body {
     --sidebar-background: 220 5% 78%; /* #c3c5c9 */
     --sidebar-foreground: 240 10% 3.9%;
     --sidebar-border: 220 5% 70%;
-    --sidebar-primary: 122 47% 49%;
+    --sidebar-primary: 258 80% 58%; /* Vibrant Purple from image */
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 5% 90%; /* Bluish-Purple Hover */
     --sidebar-accent-foreground: 240 10% 3.9%;
     --sidebar-ring: 122 47% 49%;
     
-    --user-bubble: 275 93% 42%; /* Vibrant Purple */
+    --user-bubble: 258 80% 58%; /* Vibrant Purple */
     --assistant-bubble: 240 4.8% 95.9%;
   }
   .dark {
@@ -70,13 +70,13 @@ body {
     --sidebar-background: 228 9% 17%; /* Carpathian Grey */
     --sidebar-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 17%;
-    --sidebar-primary: 158 89% 62%;
-    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-primary: 258 80% 58%; /* Vibrant Purple from image */
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 228 9% 25%; /* Dark Bluish-Purple Hover */
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-ring: 215 20% 65%;
 
-    --user-bubble: 275 93% 42%; /* Vibrant Purple */
+    --user-bubble: 258 80% 58%; /* Vibrant Purple */
     --assistant-bubble: 217 33% 17%;
   }
 }
