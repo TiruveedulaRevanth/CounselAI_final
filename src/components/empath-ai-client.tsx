@@ -580,36 +580,6 @@ export default function EmpathAIClient({ userName, onSignOut }: EmpathAIClientPr
             <Button variant="outline" className="w-full justify-start gap-2" onClick={() => setIsLibraryOpen(true)}>
                 <Library size={16}/> Library
             </Button>
-            <SidebarSeparator />
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <div className="flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer">
-                        <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-destructive text-destructive-foreground font-bold">
-                                {userName ? userName.charAt(0).toUpperCase() : <User size={20} />}
-                            </AvatarFallback>
-                        </Avatar>
-                        <span className="font-semibold truncate">{userName}</span>
-                    </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent side="top" align="start" className="w-56">
-                     <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Voice & Style</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        <div className="flex items-center w-full">
-                            <ThemeToggle />
-                            <span className="ml-2">Toggle Theme</span>
-                        </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Sign Out</span>
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
