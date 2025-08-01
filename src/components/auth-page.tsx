@@ -24,6 +24,7 @@ interface AuthPageProps {
 }
 
 const loginSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
@@ -45,7 +46,7 @@ export default function AuthPage({ onSignInSuccess }: AuthPageProps) {
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { name: "", email: "", password: "" },
   });
 
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
@@ -55,14 +56,12 @@ export default function AuthPage({ onSignInSuccess }: AuthPageProps) {
 
   const handleLogin = (values: z.infer<typeof loginSchema>) => {
     // In a real app, you'd call an API here.
-    // We'll simulate a login by using the email as the name.
     console.log("Login submitted with:", values);
-    const name = values.email.split('@')[0];
     toast({
         title: "Login Successful",
-        description: `Welcome back, ${name}!`,
+        description: `Welcome back, ${values.name}!`,
     });
-    onSignInSuccess(name);
+    onSignInSuccess(values.name);
   };
   
   const handleSignUp = (values: z.infer<typeof signUpSchema>) => {
@@ -97,6 +96,19 @@ export default function AuthPage({ onSignInSuccess }: AuthPageProps) {
         <CardContent>
             <Form {...loginForm}>
                 <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+                    <FormField
+                        control={loginForm.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Name</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Your Name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                     <FormField
                         control={loginForm.control}
                         name="email"
