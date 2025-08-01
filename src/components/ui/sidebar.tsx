@@ -217,9 +217,8 @@ const Sidebar = React.forwardRef<
           "flex-col text-sidebar-foreground",
           "transition-all duration-300 ease-in-out",
           "data-[state=collapsed]:w-[var(--sidebar-width-icon)] data-[state=expanded]:w-[var(--sidebar-width)]",
-          "group-data-[collapsible=offcanvas][data-state=collapsed]:w-0",
+          "group-data-[collapsible=offcanvas][data-state=collapsed]:w-0 group-data-[collapsible=offcanvas][data-state=collapsed]:-ml-[var(--sidebar-width)]",
           "data-[side=right]:order-last",
-          "group-data-[collapsible=offcanvas][data-state=collapsed]:-ml-[var(--sidebar-width)]",
           "group-data-[side=right][data-collapsible=offcanvas][data-state=collapsed]:-mr-[var(--sidebar-width)]",
           className
         )}
@@ -330,6 +329,7 @@ const SidebarInset = React.forwardRef<
         "relative flex min-h-svh flex-1 flex-col bg-background",
         "peer-data-[state=expanded]:md:group-data-[collapsible=icon]/sidebar-wrapper:pl-[var(--sidebar-width)]",
         "peer-data-[state=expanded]:md:group-data-[collapsible=offcanvas]/sidebar-wrapper:pl-[var(--sidebar-width)]",
+        "peer-data-[state=collapsed]:md:group-data-[collapsible=offcanvas]/sidebar-wrapper:pl-0",
         "peer-data-[state=collapsed]:md:group-data-[collapsible=icon]/sidebar-wrapper:pl-[var(--sidebar-width-icon)]",
         "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-[var(--sidebar-width-icon)] md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
         className
@@ -413,7 +413,7 @@ const SidebarContent = React.forwardRef<
       ref={ref}
       data-sidebar="content"
       className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden group-data-[collapsible=icon]:overflow-hidden",
+        "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden",
         className
       )}
       {...props}
