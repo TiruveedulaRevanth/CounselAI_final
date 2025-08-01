@@ -171,14 +171,12 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
             </CardContent>
         </Card>
       </div>
-        <Card className="mt-4">
-            <CardContent className="p-4 flex items-center justify-center text-sm">
-                <p>Want to use a different account?</p>
-                <Button variant="link" className="p-1" onClick={() => setAuthMode("signup")}>
-                    Create New Profile
-                </Button>
-            </CardContent>
-        </Card>
+        <div className="mt-4 bg-card rounded-lg border p-4 flex items-center justify-center text-sm">
+            <p>Want to use a different account?</p>
+            <Button variant="link" className="p-1 h-auto" onClick={() => setAuthMode("signup")}>
+                Create New Profile
+            </Button>
+        </div>
     </div>
   );
 
@@ -218,16 +216,14 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
                 </CardContent>
             </Card>
         </div>
-        <Card className="mt-4">
-            <CardContent className="p-4 text-center">
-                <p className="text-sm">
-                    Not {selectedProfile?.name}?{' '}
-                    <Button variant="link" className="p-1 h-auto" onClick={() => { setAuthMode("initial"); setSelectedProfile(null); }}>
-                        Use another account
-                    </Button>
-                </p>
-            </CardContent>
-        </Card>
+        <div className="mt-4 bg-card rounded-lg border p-4 text-center">
+            <p className="text-sm">
+                Not {selectedProfile?.name}?{' '}
+                <Button variant="link" className="p-1 h-auto" onClick={() => { setAuthMode("initial"); setSelectedProfile(null); }}>
+                    Use another account
+                </Button>
+            </p>
+        </div>
     </div>
   );
 
@@ -311,16 +307,14 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
                 </Form>
             </div>
         </div>
-         <Card className="mt-4">
-            <CardContent className="p-4 text-center">
-                 <p className="text-sm">
-                    Have an account?{' '}
-                    <Button variant="link" className="p-1 h-auto" onClick={() => { setAuthMode("initial"); setSelectedProfile(null); }}>
-                    Log in
-                    </Button>
-                </p>
-            </CardContent>
-        </Card>
+         <div className="mt-4 bg-card rounded-lg border p-4 text-center">
+             <p className="text-sm">
+                Have an account?{' '}
+                <Button variant="link" className="p-1 h-auto" onClick={() => { setAuthMode("initial"); setSelectedProfile(null); }}>
+                Log in
+                </Button>
+            </p>
+        </div>
     </div>
   )
 
