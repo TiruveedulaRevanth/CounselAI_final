@@ -9,6 +9,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,6 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { therapyStyles, supportedLanguages } from "./empath-ai-client";
+import { useToast } from "@/hooks/use-toast";
+import { Download } from "lucide-react";
+import type { Profile } from "./auth-page";
 
 interface SettingsDialogProps {
   availableVoices: SpeechSynthesisVoice[];
@@ -43,6 +47,7 @@ export default function SettingsDialog({
   isSettingsOpen,
   setIsSettingsOpen,
 }: SettingsDialogProps) {
+  const { toast } = useToast();
 
   const voicesForLanguage = useMemo(() => {
     return availableVoices
@@ -68,76 +73,124 @@ export default function SettingsDialog({
       setTherapyStyle(style.prompt);
     }
   };
+
+  const handleExportData = () => {
+    try {
+        const profilesString = localStorage.getItem("counselai-profiles");
+        const profiles = profilesString ? JSON.parse(profilesString) : [];
+
+        const allChats: { [key: string]: any } = {};
+
+        profiles.forEach((profile: Profile) => {
+            const chatsString = localStorage.getItem(`counselai-chats-${profile.id}`);
+            if (chatsString) {
+                allChats[profile.id] = JSON.parse(chatsString);
+            }
+        });
+
+        const exportData = {
+            profiles: profiles,
+            chats: allChats,
+            version: "1.0",
+            exportedAt: new Date().toISOString(),
+        };
+
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(dataBlob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "counselai-backup.json";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast({
+            title: "Export Successful",
+            description: "Your data has been saved to your downloads folder.",
+        });
+
+    } catch (error) {
+        console.error("Export failed:", error);
+        toast({
+            variant: "destructive",
+            title: "Export Failed",
+            description: "Could not export your data.",
+        });
+    }
+  };
     
   return (
     <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
-            Manage your app preferences here.
+            Manage your app preferences and data here.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="language-select" className="text-right">
-                Language
-              </Label>
-              <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
-                <SelectTrigger id="language-select" className="col-span-3">
-                  <SelectValue placeholder="Select a language" />
-                </SelectTrigger>
-                <SelectContent>
-                  {supportedLanguages.map(lang => (
-                    <SelectItem key={lang.code} value={lang.code}>
-                      {lang.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-2">
+                <Label htmlFor="language-select">Language</Label>
+                <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
+                    <SelectTrigger id="language-select">
+                    <SelectValue placeholder="Select a language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {supportedLanguages.map(lang => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                        {lang.name}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="voice-select" className="text-right">
-                Voice
-            </Label>
-            <Select
-                value={selectedVoice?.name}
-                onValueChange={handleVoiceChange}
-                disabled={voicesForLanguage.length === 0}
-            >
-                <SelectTrigger id="voice-select" className="col-span-3">
-                <SelectValue placeholder="Select a voice" />
-                </SelectTrigger>
-                <SelectContent>
-                {voicesForLanguage.map((voice, index) => (
-                    <SelectItem key={`${voice.name}-${index}`} value={voice.name}>
-                     {index === 0 ? "Nova" : "Orion"}
-                    </SelectItem>
-                ))}
-                </SelectContent>
-            </Select>
+             <div className="space-y-2">
+                <Label htmlFor="voice-select">Voice</Label>
+                <Select
+                    value={selectedVoice?.name}
+                    onValueChange={handleVoiceChange}
+                    disabled={voicesForLanguage.length === 0}
+                >
+                    <SelectTrigger id="voice-select">
+                    <SelectValue placeholder={voicesForLanguage.length === 0 ? "No voices available" : "Select a voice"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {voicesForLanguage.map((voice, index) => (
+                        <SelectItem key={`${voice.name}-${index}`} value={voice.name}>
+                        {index === 0 ? "Nova" : "Orion"}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="therapy-style-select" className="text-right">
-                Therapy Style
-            </Label>
-            <Select
-                value={therapyStyle}
-                onValueChange={handleTherapyStyleChange}
-            >
-                <SelectTrigger id="therapy-style-select" className="col-span-3">
-                <SelectValue placeholder="Select a style" />
-                </SelectTrigger>
-                <SelectContent>
-                {therapyStyles.map((style) => (
-                    <SelectItem key={style.name} value={style.prompt}>
-                    {style.name}
-                    </SelectItem>
-                ))}
-                </SelectContent>
-            </Select>
+             <div className="space-y-2">
+                <Label htmlFor="therapy-style-select">Therapy Style</Label>
+                <Select
+                    value={therapyStyle}
+                    onValueChange={handleTherapyStyleChange}
+                >
+                    <SelectTrigger id="therapy-style-select">
+                    <SelectValue placeholder="Select a style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {therapyStyles.map((style) => (
+                        <SelectItem key={style.name} value={style.prompt}>
+                        {style.name}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
             </div>
         </div>
+        <DialogFooter className="border-t pt-4">
+            <Button variant="outline" onClick={handleExportData} className="w-full">
+                <Download className="mr-2 h-4 w-4"/>
+                Export All Data
+            </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
