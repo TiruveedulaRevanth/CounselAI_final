@@ -53,6 +53,8 @@ import { Avatar, AvatarFallback } from "./ui/avatar";
 import { User } from "lucide-react";
 import type { Profile } from "./auth-page";
 import EditProfileDialog from "./edit-profile-dialog";
+import { db } from "@/lib/firebase";
+import { doc, setDoc, onSnapshot } from "firebase/firestore";
 
 
 declare global {
@@ -154,16 +156,19 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   
   const [currentProfile, setCurrentProfile] = useState(activeProfile);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  
+  const speechRecognition = useRef<any>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const userName = currentProfile.name;
+  
+  // Firestore document reference for the current user's chats
+  const chatDocRef = useMemo(() => doc(db, "chats", currentProfile.id), [currentProfile.id]);
+
 
   useEffect(() => {
     setCurrentProfile(activeProfile);
   }, [activeProfile]);
-
-  const speechRecognition = useRef<any>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const userName = currentProfile.name;
-  const storageKey = useMemo(() => `counselai-chats-${currentProfile.id}`, [currentProfile.id]);
-
 
   const handleSignOut = () => {
     onSignOut();
@@ -171,11 +176,60 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     setActiveChatId(null);
   }
 
+  // Effect to listen for real-time chat updates from Firestore
+  useEffect(() => {
+    setIsDataLoading(true);
+    const unsubscribe = onSnapshot(chatDocRef, (doc) => {
+        if (doc.exists()) {
+            const data = doc.data();
+            const chatsData = data.chats || [];
+            
+            setChats(chatsData);
+
+            if (chatsData.length > 0 && !activeChatId) {
+                const sortedChats = [...chatsData].sort((a, b) => b.createdAt - a.createdAt);
+                setActiveChatId(sortedChats[0].id);
+            } else if (chatsData.length === 0) {
+                setActiveChatId(null);
+            }
+        } else {
+            // No document yet for this user, set empty chats
+            setChats([]);
+            setActiveChatId(null);
+        }
+        setIsDataLoading(false);
+    }, (error) => {
+        console.error("Error fetching chats from Firestore:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not load chat history."
+        });
+        setIsDataLoading(false);
+    });
+
+    // Cleanup subscription on component unmount
+    return () => unsubscribe();
+  }, [chatDocRef, toast, activeChatId]);
+
+
+  const updateChatsInFirestore = async (newChats: Chat[]) => {
+    try {
+        await setDoc(chatDocRef, { chats: newChats }, { merge: true });
+    } catch (error) {
+        console.error("Error saving chats to Firestore:", error);
+        toast({
+            variant: "destructive",
+            title: "Sync Error",
+            description: "Could not save your latest message. Please try again."
+        });
+    }
+  };
+
+
   const handleProfileUpdate = (updatedProfile: Profile) => {
-    // Update the profile in the main state
     setCurrentProfile(updatedProfile);
 
-    // Persist this change to local storage where profiles are managed
     const storedProfiles = localStorage.getItem("counselai-profiles");
     if (storedProfiles) {
         const profiles: Profile[] = JSON.parse(storedProfiles);
@@ -188,11 +242,15 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     });
   };
 
-  const handleDeleteProfile = () => {
-    // Remove all data associated with the profile
-    localStorage.removeItem(`counselai-chats-${currentProfile.id}`);
-
-    // Get all profiles, filter out the current one
+  const handleDeleteProfile = async () => {
+    // Delete Firestore document
+    try {
+        await setDoc(chatDocRef, { chats: [] }); // Clear the chats
+    } catch (error) {
+        console.error("Could not clear Firestore data:", error);
+    }
+    
+    // Remove profile from localStorage
     const storedProfiles = localStorage.getItem("counselai-profiles");
     if (storedProfiles) {
         const profiles: Profile[] = JSON.parse(storedProfiles);
@@ -205,78 +263,36 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         description: "Your profile and all data have been removed.",
     });
     
-    // Sign out to return to the auth page
     handleSignOut();
   };
-
-  // Load chats from local storage on initial render
-  useEffect(() => {
-    try {
-      const savedChats = localStorage.getItem(storageKey);
-      if (savedChats) {
-        const parsedChats = JSON.parse(savedChats) as Chat[];
-        const chatsWithTimestamps = parsedChats.map(c => ({...c, createdAt: c.createdAt || Date.now() }));
-        setChats(chatsWithTimestamps);
-
-        if (chatsWithTimestamps.length > 0) {
-           const sortedChats = chatsWithTimestamps.sort((a, b) => b.createdAt - a.createdAt);
-           if (sortedChats.length > 0) {
-              setActiveChatId(sortedChats[0].id);
-           } else {
-             setActiveChatId(null);
-           }
-        } else {
-           setActiveChatId(null);
-        }
-      } else {
-        setChats([]);
-        setActiveChatId(null);
-      }
-    } catch (error) {
-      console.error("Failed to load chats from local storage:", error);
-    }
-  }, [storageKey]);
-
-  // Save chats to local storage whenever they change
-  useEffect(() => {
-    if (chats.length > 0) {
-      localStorage.setItem(storageKey, JSON.stringify(chats));
-    } else {
-      localStorage.removeItem(storageKey);
-    }
-  }, [chats, storageKey]);
   
-  const createNewChat = () => {
+  const createNewChat = async () => {
     const newChat: Chat = {
       id: `chat-${Date.now()}`,
       name: "New Chat",
       messages: [],
       createdAt: Date.now(),
     };
-    setChats(prev => [newChat, ...prev.sort((a, b) => b.createdAt - a.createdAt)]);
+    const updatedChats = [newChat, ...chats];
+    await updateChatsInFirestore(updatedChats);
     setActiveChatId(newChat.id);
   };
 
-  const handleDeleteChat = (chatId: string) => {
-    setChats(prev => {
-        const remainingChats = prev.filter(c => c.id !== chatId);
-        if (activeChatId === chatId) {
-            if (remainingChats.length > 0) {
-                const sortedRemaining = remainingChats.sort((a, b) => b.createdAt - a.createdAt);
-                if (sortedRemaining.length > 0) {
-                  setActiveChatId(sortedRemaining[0].id);
-                } else {
-                  setActiveChatId(null);
-                }
-            } else {
-                setActiveChatId(null);
-            }
+  const handleDeleteChat = async (chatId: string) => {
+    const remainingChats = chats.filter(c => c.id !== chatId);
+    
+    if (activeChatId === chatId) {
+        if (remainingChats.length > 0) {
+            const sortedRemaining = remainingChats.sort((a, b) => b.createdAt - a.createdAt);
+            setActiveChatId(sortedRemaining[0].id);
+        } else {
+            setActiveChatId(null);
         }
-        return remainingChats;
-    });
+    }
+    await updateChatsInFirestore(remainingChats);
   };
 
-  const handleScopedDelete = () => {
+  const handleScopedDelete = async () => {
     const now = Date.now();
     let chatsToKeep: Chat[];
 
@@ -300,7 +316,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             break;
     }
     
-    setChats(chatsToKeep);
+    await updateChatsInFirestore(chatsToKeep);
 
     if (chatsToKeep.length > 0) {
         const isCurrentChatDeleted = !chatsToKeep.some(c => c.id === activeChatId);
@@ -480,122 +496,118 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
   const handleSend = async (text: string) => {
     if (!text.trim() || isLoading) return;
-  
+
     let currentChatId = activeChatId;
-    let isNewChat = false;
+    let currentChats = chats;
+
+    // If no active chat, create one first
     if (!currentChatId || !activeChat) {
-        isNewChat = true;
         const newChat: Chat = {
           id: `chat-${Date.now()}`,
           name: "New Chat",
           messages: [],
           createdAt: Date.now(),
         };
-        setChats(prev => [newChat, ...prev]);
+        currentChats = [newChat, ...chats];
         currentChatId = newChat.id;
         setActiveChatId(newChat.id);
+        // Initial write for new chat
+        await updateChatsInFirestore(currentChats);
     }
-  
-    const isFirstMessage = activeChat ? activeChat.messages.length === 0 : true;
-  
+
+    const isFirstMessage = chats.find(c => c.id === currentChatId)?.messages.length === 0;
+
     const newUserMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: text,
+        id: Date.now().toString(),
+        role: "user",
+        content: text,
     };
-  
-    // Use a function for setting state to ensure we have the latest `chats`
-    setChats(prevChats =>
-        prevChats.map(chat =>
-            chat.id === currentChatId
+    
+    // Optimistically update the local state for a responsive UI
+    const updatedChatsWithUserMessage = currentChats.map(chat =>
+        chat.id === currentChatId
             ? { ...chat, messages: [...chat.messages, newUserMessage] }
             : chat
-        )
     );
+    setChats(updatedChatsWithUserMessage);
 
-    const history = isNewChat ? [] : chats.find(c => c.id === currentChatId)?.messages.map(({ role, content }) => ({ role, content })) || [];
-  
+
+    const history = updatedChatsWithUserMessage.find(c => c.id === currentChatId)?.messages.map(({ role, content }) => ({ role, content })) || [];
+
     setUserInput("");
     setIsLoading(true);
     handleStopSpeaking();
     if (isListening) {
-      speechRecognition.current?.stop();
-      setIsListening(false);
+        speechRecognition.current?.stop();
+        setIsListening(false);
     }
-  
+
+    // Save user message to Firestore
+    await updateChatsInFirestore(updatedChatsWithUserMessage);
+    
     try {
-      if (isFirstMessage) {
-        try {
-          const titleResult = await summarizeChat({ message: text });
-          if (titleResult.title) {
-            setChats(prev =>
-              prev.map(chat =>
-                chat.id === currentChatId
-                  ? { ...chat, name: titleResult.title }
-                  : chat
-              )
-            );
-          }
-        } catch (titleError) {
-          console.error("Failed to summarize chat title, using default.", titleError);
-          setChats(prev =>
-            prev.map(chat =>
-              chat.id === currentChatId
-                ? { ...chat, name: text.substring(0, 40) + '...' }
-                : chat
-            )
-          );
+        if (isFirstMessage) {
+            try {
+                const titleResult = await summarizeChat({ message: text });
+                if (titleResult.title) {
+                     const chatsWithTitle = updatedChatsWithUserMessage.map(chat =>
+                        chat.id === currentChatId
+                        ? { ...chat, name: titleResult.title }
+                        : chat
+                     );
+                     setChats(chatsWithTitle);
+                     await updateChatsInFirestore(chatsWithTitle);
+                }
+            } catch (titleError) {
+                console.error("Failed to summarize chat title.", titleError);
+            }
         }
-      }
-  
-      const aiResult = await personalizeTherapyStyle({
-        userName: userName,
-        therapyStyle: therapyStyle,
-        userInput: text,
-        history: history,
-      });
-  
-      if (aiResult.response) {
-        const newAssistantMessage: Message = {
-          id: Date.now().toString() + "-ai",
-          role: "assistant",
-          content: aiResult.response,
-        };
         
-        setChats(prev =>
-          prev.map(chat =>
-            chat.id === currentChatId
-              ? { ...chat, messages: [...chat.messages, newAssistantMessage] }
-              : chat
-          )
-        );
-      } else {
-        throw new Error("Received an empty response from the AI.");
-      }
+        const aiResult = await personalizeTherapyStyle({
+            userName: userName,
+            therapyStyle: therapyStyle,
+            userInput: text,
+            history: history,
+        });
+
+        if (aiResult.response) {
+            const newAssistantMessage: Message = {
+                id: Date.now().toString() + "-ai",
+                role: "assistant",
+                content: aiResult.response,
+            };
+
+            const finalChats = (await (async () => {
+                const currentDoc = await onSnapshot(chatDocRef, (doc) => {});
+                // @ts-ignore
+                const latestChats = (await db.collection("chats").doc(currentProfile.id).get()).data().chats;
+                return latestChats.map((chat: Chat) =>
+                  chat.id === currentChatId
+                    ? { ...chat, messages: [...chat.messages, newAssistantMessage] }
+                    : chat
+                );
+            })());
+
+            setChats(finalChats);
+            await updateChatsInFirestore(finalChats);
+
+        } else {
+            throw new Error("Received an empty response from the AI.");
+        }
     } catch (error) {
-      console.error("Error calling AI:", error);
-      toast({
-        variant: "destructive",
-        title: "AI Error",
-        description: "Sorry, I encountered an error. Please try again.",
-      });
-      const assistantErrorMessage: Message = {
-        id: Date.now().toString() + "-ai-error",
-        role: "assistant",
-        content: "I'm sorry, I seem to be having trouble connecting. Please try again in a moment.",
-      };
-      
-      setChats(prev =>
-        prev.map(chat =>
-          chat.id === currentChatId
-            ? { ...chat, messages: [...chat.messages, assistantErrorMessage] }
-            : chat
-        )
-      );
+        console.error("Error calling AI:", error);
+        toast({
+            variant: "destructive",
+            title: "AI Error",
+            description: "Sorry, I encountered an error. Please try again.",
+        });
+        // We don't save the AI error message to history
+        // Let's revert the user message optimism
+        setChats(currentChats); 
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };  
+  };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -834,11 +846,17 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
           <div className="flex-1 flex flex-col min-h-0">
              <ScrollArea className="flex-1" ref={scrollAreaRef}>
                 <div className="p-6 space-y-6">
-                    {(!activeChat || activeChat.messages.length === 0) && !isLoading && (
+                    {(isDataLoading || (!activeChat || activeChat.messages.length === 0)) && !isLoading && (
                         <div className="flex-1 flex flex-col items-center justify-center text-center h-[calc(100vh-200px)]">
-                            <BrainLogo className="w-24 h-24 text-primary mb-4"/>
-                            <h2 className="text-2xl font-bold">Welcome back, {userName}</h2>
-                            <p className="text-muted-foreground">Start a new conversation by typing below or using the microphone.</p>
+                           {isDataLoading ? (
+                             <p className="text-muted-foreground">Loading chats...</p>
+                           ) : (
+                            <>
+                                <BrainLogo className="w-24 h-24 text-primary mb-4"/>
+                                <h2 className="text-2xl font-bold">Welcome back, {userName}</h2>
+                                <p className="text-muted-foreground">Start a new conversation by typing below or using the microphone.</p>
+                            </>
+                           )}
                         </div>
                     )}
                     {activeChat?.messages.map(message => (
