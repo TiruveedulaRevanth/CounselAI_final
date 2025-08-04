@@ -5,7 +5,7 @@ import { personalizeTherapyStyle } from "@/ai/flows/therapy-style-personalizatio
 import { summarizeChat } from "@/ai/flows/summarize-chat-flow";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Mic, Send, Settings, Trash2, MoreHorizontal, MessageSquarePlus, Square, Library, Sparkles, Siren, Edit } from "lucide-react";
+import { LogOut, Mic, Send, Settings, Trash2, MoreHorizontal, MessageSquarePlus, Square, Library, Sparkles, Siren, Edit, Archive, ArchiveX } from "lucide-react";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import ChatMessage from "./chat-message";
 import SettingsDialog from "./settings-dialog";
@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { BrainLogo } from "./brain-logo";
 import { ThemeToggle } from "./theme-toggle";
-import { isToday, isYesterday, isWithinInterval, subDays, startOfToday, startOfDay, sub } from "date-fns";
+import { isToday, isYesterday, isWithinInterval, subDays } from "date-fns";
 import EmergencyResourcesDialog from "./emergency-resources-dialog";
 import ResourcesLibrary from "./resources-library";
 import MindfulToolkitDialog from "./mindful-toolkit-dialog";
@@ -54,7 +54,8 @@ import { User } from "lucide-react";
 import type { Profile } from "./auth-page";
 import EditProfileDialog from "./edit-profile-dialog";
 import { db } from "@/lib/firebase";
-import { doc, setDoc, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 
 declare global {
@@ -75,6 +76,7 @@ export type Chat = {
   name: string;
   messages: Message[];
   createdAt: number;
+  isArchived?: boolean;
 };
 
 type DeletionScope = "today" | "week" | "month" | "all";
@@ -187,8 +189,9 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             setChats(chatsData);
 
             if (chatsData.length > 0 && !activeChatId) {
-                const sortedChats = [...chatsData].sort((a, b) => b.createdAt - a.createdAt);
-                setActiveChatId(sortedChats[0].id);
+                const unarchivedChats = chatsData.filter((c: Chat) => !c.isArchived);
+                const sortedChats = [...unarchivedChats].sort((a, b) => b.createdAt - a.createdAt);
+                setActiveChatId(sortedChats[0]?.id || null);
             } else if (chatsData.length === 0) {
                 setActiveChatId(null);
             }
@@ -210,7 +213,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
     // Cleanup subscription on component unmount
     return () => unsubscribe();
-  }, [chatDocRef, toast, activeChatId]);
+  }, [chatDocRef, toast]);
 
 
   const updateChatsInFirestore = async (newChats: Chat[]) => {
@@ -272,25 +275,43 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       name: "New Chat",
       messages: [],
       createdAt: Date.now(),
+      isArchived: false,
     };
     const updatedChats = [newChat, ...chats];
+    setChats(updatedChats);
     await updateChatsInFirestore(updatedChats);
     setActiveChatId(newChat.id);
   };
 
   const handleDeleteChat = async (chatId: string) => {
-    const remainingChats = chats.filter(c => c.id !== chatId);
+    const updatedChats = chats.filter(c => c.id !== chatId);
     
     if (activeChatId === chatId) {
-        if (remainingChats.length > 0) {
-            const sortedRemaining = remainingChats.sort((a, b) => b.createdAt - a.createdAt);
-            setActiveChatId(sortedRemaining[0].id);
-        } else {
-            setActiveChatId(null);
-        }
+        const sortedRemaining = updatedChats.filter(c => !c.isArchived).sort((a, b) => b.createdAt - a.createdAt);
+        setActiveChatId(sortedRemaining[0]?.id || null);
     }
-    await updateChatsInFirestore(remainingChats);
+    setChats(updatedChats);
+    await updateChatsInFirestore(updatedChats);
   };
+  
+  const handleToggleArchiveChat = async (chatId: string) => {
+    const chatToToggle = chats.find(c => c.id === chatId);
+    if (!chatToToggle) return;
+
+    const updatedChats = chats.map(c => 
+        c.id === chatId ? { ...c, isArchived: !c.isArchived } : c
+    );
+
+    // If we just archived the active chat, select a new active chat
+    if (chatId === activeChatId && !chatToToggle.isArchived) {
+        const sortedRemaining = updatedChats.filter(c => !c.isArchived).sort((a, b) => b.createdAt - a.createdAt);
+        setActiveChatId(sortedRemaining[0]?.id || null);
+    }
+    
+    setChats(updatedChats);
+    await updateChatsInFirestore(updatedChats);
+  };
+
 
   const handleScopedDelete = async () => {
     const now = Date.now();
@@ -316,6 +337,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             break;
     }
     
+    setChats(chatsToKeep);
     await updateChatsInFirestore(chatsToKeep);
 
     if (chatsToKeep.length > 0) {
@@ -338,6 +360,21 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
   const activeChat = useMemo(() => chats.find(chat => chat.id === activeChatId), [chats, activeChatId]);
 
+  const { unarchivedChats, archivedChats } = useMemo(() => {
+    const sortedChats = chats.sort((a, b) => b.createdAt - a.createdAt);
+    const unarchived: Chat[] = [];
+    const archived: Chat[] = [];
+    sortedChats.forEach(chat => {
+        if (chat.isArchived) {
+            archived.push(chat);
+        } else {
+            unarchived.push(chat);
+        }
+    });
+    return { unarchivedChats, archivedChats };
+  }, [chats]);
+
+
   const groupedChats = useMemo(() => {
     const now = new Date();
     const today: Chat[] = [];
@@ -346,9 +383,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     const last30Days: Chat[] = [];
     const older: Chat[] = [];
 
-    const sortedChats = chats.sort((a, b) => b.createdAt - a.createdAt);
-
-    sortedChats.forEach(chat => {
+    unarchivedChats.forEach(chat => {
       const chatDate = new Date(chat.createdAt);
       if (isToday(chatDate)) {
         today.push(chat);
@@ -371,7 +406,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         { label: "Older", chats: older }
     ].filter(group => group.chats.length > 0);
 
-  }, [chats]);
+  }, [unarchivedChats]);
 
   const speakText = useCallback((text: string) => {
     if ('speechSynthesis' in window && selectedVoice) {
@@ -494,34 +529,40 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     setIsListening(prev => !prev);
   };
 
-  const handleSend = async (text: string) => {
+ const handleSend = async (text: string) => {
     if (!text.trim() || isLoading) return;
 
     let currentChatId = activeChatId;
     let currentChats = chats;
+    let currentChat = activeChat;
 
     // If no active chat, create one first
-    if (!currentChatId || !activeChat) {
-        const newChat: Chat = {
-          id: `chat-${Date.now()}`,
-          name: "New Chat",
-          messages: [],
-          createdAt: Date.now(),
-        };
-        currentChats = [newChat, ...chats];
-        currentChatId = newChat.id;
-        setActiveChatId(newChat.id);
-        // Initial write for new chat
-        await updateChatsInFirestore(currentChats);
+    if (!currentChatId || !currentChat) {
+      const newChat: Chat = {
+        id: `chat-${Date.now()}`,
+        name: "New Chat",
+        messages: [],
+        createdAt: Date.now(),
+        isArchived: false,
+      };
+      currentChats = [newChat, ...chats];
+      currentChat = newChat;
+      currentChatId = newChat.id;
+      setActiveChatId(newChat.id);
+      setChats(currentChats);
+      // No need to await here, state is set
     }
 
-    const isFirstMessage = chats.find(c => c.id === currentChatId)?.messages.length === 0;
+    const isFirstMessage = currentChat.messages.length === 0;
 
     const newUserMessage: Message = {
-        id: Date.now().toString(),
-        role: "user",
-        content: text,
+      id: Date.now().toString(),
+      role: "user",
+      content: text,
     };
+
+    // This is the history that will be sent to the AI
+    const historyForAI = [...currentChat.messages, newUserMessage].map(({ role, content }) => ({ role, content }));
     
     // Optimistically update the local state for a responsive UI
     const updatedChatsWithUserMessage = currentChats.map(chat =>
@@ -531,9 +572,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     );
     setChats(updatedChatsWithUserMessage);
 
-
-    const history = updatedChatsWithUserMessage.find(c => c.id === currentChatId)?.messages.map(({ role, content }) => ({ role, content })) || [];
-
     setUserInput("");
     setIsLoading(true);
     handleStopSpeaking();
@@ -541,34 +579,31 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         speechRecognition.current?.stop();
         setIsListening(false);
     }
-
-    // Save user message to Firestore
-    await updateChatsInFirestore(updatedChatsWithUserMessage);
     
     try {
-        if (isFirstMessage) {
-            try {
-                const titleResult = await summarizeChat({ message: text });
-                if (titleResult.title) {
-                     const chatsWithTitle = updatedChatsWithUserMessage.map(chat =>
-                        chat.id === currentChatId
-                        ? { ...chat, name: titleResult.title }
-                        : chat
-                     );
-                     setChats(chatsWithTitle);
-                     await updateChatsInFirestore(chatsWithTitle);
-                }
-            } catch (titleError) {
-                console.error("Failed to summarize chat title.", titleError);
-            }
-        }
-        
-        const aiResult = await personalizeTherapyStyle({
+        // Start both AI calls in parallel
+        const summarizePromise = isFirstMessage 
+            ? summarizeChat({ message: text })
+            : Promise.resolve(null);
+
+        const responsePromise = personalizeTherapyStyle({
             userName: userName,
             therapyStyle: therapyStyle,
             userInput: text,
-            history: history,
+            history: historyForAI.slice(0, -1), // Send history *before* the current message
         });
+
+        const [summarizeResult, aiResult] = await Promise.all([summarizePromise, responsePromise]);
+
+        let finalChats = updatedChatsWithUserMessage;
+
+        if (summarizeResult?.title) {
+            finalChats = finalChats.map(chat =>
+                chat.id === currentChatId
+                ? { ...chat, name: summarizeResult.title }
+                : chat
+            );
+        }
 
         if (aiResult.response) {
             const newAssistantMessage: Message = {
@@ -576,24 +611,18 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                 role: "assistant",
                 content: aiResult.response,
             };
-
-            const finalChats = (await (async () => {
-                const currentDoc = await onSnapshot(chatDocRef, (doc) => {});
-                // @ts-ignore
-                const latestChats = (await db.collection("chats").doc(currentProfile.id).get()).data().chats;
-                return latestChats.map((chat: Chat) =>
-                  chat.id === currentChatId
+            finalChats = finalChats.map(chat =>
+                chat.id === currentChatId
                     ? { ...chat, messages: [...chat.messages, newAssistantMessage] }
                     : chat
-                );
-            })());
-
-            setChats(finalChats);
-            await updateChatsInFirestore(finalChats);
-
+            );
         } else {
             throw new Error("Received an empty response from the AI.");
         }
+
+        setChats(finalChats);
+        await updateChatsInFirestore(finalChats);
+
     } catch (error) {
         console.error("Error calling AI:", error);
         toast({
@@ -601,8 +630,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             title: "AI Error",
             description: "Sorry, I encountered an error. Please try again.",
         });
-        // We don't save the AI error message to history
-        // Let's revert the user message optimism
+        // Revert the optimistic update on error
         setChats(currentChats); 
     } finally {
         setIsLoading(false);
@@ -681,6 +709,10 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                 </SidebarMenuAction>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+                 <DropdownMenuItem onClick={() => handleToggleArchiveChat(chat.id)}>
+                    {chat.isArchived ? <ArchiveX className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+                    {chat.isArchived ? "Unarchive" : "Archive"}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleDeleteChat(chat.id)} className="text-destructive">
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
@@ -746,6 +778,21 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                     </SidebarGroup>
                 ))}
                 </SidebarMenu>
+
+                 {archivedChats.length > 0 && (
+                    <Collapsible className="mt-4">
+                        <CollapsibleTrigger className="flex items-center gap-1 text-sm font-medium text-muted-foreground w-full p-2 rounded-md hover:bg-accent">
+                            Archived ({archivedChats.length})
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                             <SidebarMenu className="mt-1">
+                                {archivedChats.map(chat => (
+                                    <ChatMenuItem key={chat.id} chat={chat} />
+                                ))}
+                            </SidebarMenu>
+                        </CollapsibleContent>
+                    </Collapsible>
+                 )}
             </ScrollArea>
         </SidebarContent>
 
@@ -926,3 +973,5 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
+
+    
