@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -25,7 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { BrainLogo } from "./brain-logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { User, Trash2, Upload } from "lucide-react";
+import { User, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -101,7 +101,6 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
   const { toast } = useToast();
   const [authMode, setAuthMode] = useState<"initial" | "signup">("initial");
   const [isLoading, setIsLoading] = useState(true);
-  const importFileInputRef = useRef<HTMLInputElement>(null);
 
   const signUpSchema = createSignUpSchema(existingProfiles);
 
@@ -176,67 +175,6 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
     });
   };
   
-  const handleImportClick = () => {
-    importFileInputRef.current?.click();
-  };
-
-  const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const text = e.target?.result;
-            if (typeof text !== 'string') {
-                throw new Error("File is not readable");
-            }
-            const data = JSON.parse(text);
-
-            // Basic validation
-            if (!data.profiles || !data.chats) {
-                throw new Error("Invalid backup file format.");
-            }
-
-            // Here you would do more robust validation with Zod if needed
-            const importedProfiles: Profile[] = data.profiles;
-            
-            // Merge profiles, avoiding duplicates based on ID
-            const existingIds = new Set(existingProfiles.map(p => p.id));
-            const newProfiles = importedProfiles.filter(p => !existingIds.has(p.id));
-            const updatedProfiles = [...existingProfiles, ...newProfiles];
-            
-            setProfiles(updatedProfiles);
-
-            // Import chats for all imported profiles
-            for (const profileId in data.chats) {
-                if (Object.prototype.hasOwnProperty.call(data.chats, profileId)) {
-                    localStorage.setItem(`counselai-chats-${profileId}`, JSON.stringify(data.chats[profileId]));
-                }
-            }
-
-            toast({
-                title: "Import Successful",
-                description: "Your profiles and chats have been restored.",
-            });
-
-        } catch (error) {
-            console.error("Import error:", error);
-            toast({
-                variant: "destructive",
-                title: "Import Failed",
-                description: error instanceof Error ? error.message : "Could not import the file.",
-            });
-        } finally {
-             // Reset file input value to allow re-uploading the same file
-            if(importFileInputRef.current) {
-                importFileInputRef.current.value = "";
-            }
-        }
-    };
-    reader.readAsText(file);
-  };
-
   const renderInitial = () => (
     <div className="w-full max-w-sm">
         <div className="p-1 rounded-xl bg-gradient-to-br from-[#8134AF] via-[#DD2A7B] to-[#FEDA77]">
@@ -374,22 +312,6 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 font-sans">
         <div className="flex flex-col items-center w-full max-w-sm">
          {getAuthContent()}
-        </div>
-        <div className="mt-6 text-center">
-                <input
-                    type="file"
-                    ref={importFileInputRef}
-                    className="hidden"
-                    accept=".json"
-                    onChange={handleImportFile}
-                />
-                <Button variant="outline" onClick={handleImportClick}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Import Profiles
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2">
-                    Restore your profiles and chats from a backup file.
-                </p>
         </div>
     </div>
   );
