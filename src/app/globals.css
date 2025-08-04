@@ -20,7 +20,7 @@ body {
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 258 80% 58%; /* Instagram Lavender/Purple */
+    --accent: 285 85% 65%; /* Pinkish Purple */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%; /* Red */
     --destructive-foreground: 0 0% 98%;
@@ -59,7 +59,7 @@ body {
     --secondary-foreground: 210 40% 98%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 258 80% 58%; /* Instagram Lavender/Purple */
+    --accent: 285 85% 65%; /* Pinkish Purple */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
