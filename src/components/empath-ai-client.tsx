@@ -5,7 +5,7 @@ import { personalizeTherapyStyle } from "@/ai/flows/therapy-style-personalizatio
 import { summarizeChat } from "@/ai/flows/summarize-chat-flow";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Mic, Send, Settings, Trash2, MoreHorizontal, MessageSquarePlus, Square, Library, Sparkles, Siren, Edit, Archive, ArchiveX } from "lucide-react";
+import { LogOut, Mic, Send, Settings, Trash2, MoreHorizontal, MessageSquarePlus, Square, Library, Sparkles, Siren, Edit } from "lucide-react";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import ChatMessage from "./chat-message";
 import SettingsDialog from "./settings-dialog";
@@ -53,7 +53,6 @@ import { Avatar, AvatarFallback } from "./ui/avatar";
 import { User } from "lucide-react";
 import type { Profile } from "./auth-page";
 import EditProfileDialog from "./edit-profile-dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 
 
 declare global {
@@ -74,7 +73,6 @@ export type Chat = {
   name: string;
   messages: Message[];
   createdAt: number;
-  isArchived?: boolean;
 };
 
 type DeletionScope = "today" | "week" | "month" | "all";
@@ -217,11 +215,11 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       const savedChats = localStorage.getItem(storageKey);
       if (savedChats) {
         const parsedChats = JSON.parse(savedChats) as Chat[];
-        const chatsWithTimestamps = parsedChats.map(c => ({...c, createdAt: c.createdAt || Date.now(), isArchived: c.isArchived || false }));
+        const chatsWithTimestamps = parsedChats.map(c => ({...c, createdAt: c.createdAt || Date.now() }));
         setChats(chatsWithTimestamps);
 
         if (chatsWithTimestamps.length > 0) {
-           const sortedChats = chatsWithTimestamps.filter(c => !c.isArchived).sort((a, b) => b.createdAt - a.createdAt);
+           const sortedChats = chatsWithTimestamps.sort((a, b) => b.createdAt - a.createdAt);
            if (sortedChats.length > 0) {
               setActiveChatId(sortedChats[0].id);
            } else {
@@ -254,7 +252,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       name: "New Chat",
       messages: [],
       createdAt: Date.now(),
-      isArchived: false,
     };
     setChats(prev => [newChat, ...prev.sort((a, b) => b.createdAt - a.createdAt)]);
     setActiveChatId(newChat.id);
@@ -265,7 +262,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         const remainingChats = prev.filter(c => c.id !== chatId);
         if (activeChatId === chatId) {
             if (remainingChats.length > 0) {
-                const sortedRemaining = remainingChats.filter(c => !c.isArchived).sort((a, b) => b.createdAt - a.createdAt);
+                const sortedRemaining = remainingChats.sort((a, b) => b.createdAt - a.createdAt);
                 if (sortedRemaining.length > 0) {
                   setActiveChatId(sortedRemaining[0].id);
                 } else {
@@ -278,16 +275,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         return remainingChats;
     });
   };
-
-  const handleToggleArchiveChat = (chatId: string) => {
-    setChats(prev => prev.map(c => c.id === chatId ? { ...c, isArchived: !c.isArchived } : c));
-    if (activeChatId === chatId) {
-        setActiveChatId(null);
-        const nextChat = chats.find(c => !c.isArchived && c.id !== chatId);
-        if(nextChat) setActiveChatId(nextChat.id);
-    }
-  }
-
 
   const handleScopedDelete = () => {
     const now = Date.now();
@@ -335,22 +322,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
   const activeChat = useMemo(() => chats.find(chat => chat.id === activeChatId), [chats, activeChatId]);
 
-  const { archivedChats, unarchivedChats } = useMemo(() => {
-    const archived: Chat[] = [];
-    const unarchived: Chat[] = [];
-    chats.forEach(chat => {
-      if (chat.isArchived) {
-        archived.push(chat);
-      } else {
-        unarchived.push(chat);
-      }
-    });
-    return {
-      archivedChats: archived.sort((a, b) => b.createdAt - a.createdAt),
-      unarchivedChats: unarchived,
-    };
-  }, [chats]);
-
   const groupedChats = useMemo(() => {
     const now = new Date();
     const today: Chat[] = [];
@@ -359,7 +330,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     const last30Days: Chat[] = [];
     const older: Chat[] = [];
 
-    const sortedChats = unarchivedChats.sort((a, b) => b.createdAt - a.createdAt);
+    const sortedChats = chats.sort((a, b) => b.createdAt - a.createdAt);
 
     sortedChats.forEach(chat => {
       const chatDate = new Date(chat.createdAt);
@@ -384,7 +355,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         { label: "Older", chats: older }
     ].filter(group => group.chats.length > 0);
 
-  }, [unarchivedChats]);
+  }, [chats]);
 
   const speakText = useCallback((text: string) => {
     if ('speechSynthesis' in window && selectedVoice) {
@@ -519,7 +490,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
           name: "New Chat",
           messages: [],
           createdAt: Date.now(),
-          isArchived: false,
         };
         setChats(prev => [newChat, ...prev]);
         currentChatId = newChat.id;
@@ -699,13 +669,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                 </SidebarMenuAction>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => handleToggleArchiveChat(chat.id)}>
-                    {chat.isArchived ? (
-                        <><ArchiveX className="mr-2 h-4 w-4" /> Unarchive</>
-                    ) : (
-                        <><Archive className="mr-2 h-4 w-4" /> Archive</>
-                    )}
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleDeleteChat(chat.id)} className="text-destructive">
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
@@ -772,22 +735,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                 ))}
                 </SidebarMenu>
             </ScrollArea>
-             {archivedChats.length > 0 && (
-                <Collapsible className="px-2">
-                    <CollapsibleTrigger className="w-full">
-                        <SidebarGroup>
-                            <SidebarGroupLabel>Archived</SidebarGroupLabel>
-                        </SidebarGroup>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                        <SidebarMenu>
-                            {archivedChats.map(chat => (
-                                <ChatMenuItem key={chat.id} chat={chat} />
-                            ))}
-                        </SidebarMenu>
-                    </CollapsibleContent>
-                </Collapsible>
-            )}
         </SidebarContent>
 
         <SidebarFooter className="p-2 space-y-1">
@@ -961,7 +908,3 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
-
-    
-
-    
