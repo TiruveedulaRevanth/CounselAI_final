@@ -129,6 +129,7 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
         toast({
             title: "Login Successful",
             description: `Welcome back, ${profile.name}!`,
+            duration: 3000,
         });
         onSignInSuccess(profile);
     } else {
@@ -149,6 +150,7 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
     toast({
         title: "Sign Up Successful",
         description: "You can now start using CounselAI.",
+        duration: 3000,
     });
     const updatedProfiles = [...existingProfiles, newProfile];
     setProfiles(updatedProfiles);
