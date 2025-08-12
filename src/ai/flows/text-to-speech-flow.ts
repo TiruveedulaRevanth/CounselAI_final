@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for converting text to speech using an advanced AI model.
@@ -17,7 +18,7 @@ const TextToSpeechInputSchema = z.object({
 export type TextToSpeechInput = z.infer<typeof TextToSpeechInputSchema>;
 
 const TextToSpeechOutputSchema = z.object({
-  audio: z.string().describe("The generated audio as a data URI in WAV format. Expected format: 'data:audio/wav;base64,<encoded_data>'."),
+  audio: z.string().describe("The generated audio as a data URI in WAV format. Expected format: 'data:audio/wav;base64,<encoded_data>'.").optional(),
 });
 export type TextToSpeechOutput = z.infer<typeof TextToSpeechOutputSchema>;
 
@@ -61,33 +62,40 @@ const textToSpeechFlow = ai.defineFlow(
     outputSchema: TextToSpeechOutputSchema,
   },
   async ({ text }) => {
-    const { media } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-preview-tts',
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Algenib' },
-          },
+    try {
+        const { media } = await ai.generate({
+        model: 'googleai/gemini-2.5-flash-preview-tts',
+        config: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+            voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: 'Algenib' },
+            },
+            },
         },
-      },
-      prompt: text,
-    });
+        prompt: text,
+        });
 
-    if (!media) {
-      throw new Error('No audio media was returned from the TTS model.');
+        if (!media) {
+            console.error('No audio media was returned from the TTS model.');
+            return { audio: undefined };
+        }
+
+        // The audio data is a base64 encoded string after the comma
+        const audioBuffer = Buffer.from(
+        media.url.substring(media.url.indexOf(',') + 1),
+        'base64'
+        );
+        
+        const wavBase64 = await toWav(audioBuffer);
+
+        return {
+        audio: `data:audio/wav;base64,${wavBase64}`,
+        };
+    } catch(error) {
+        console.error("Error in textToSpeechFlow (likely a rate limit or API issue):", error);
+        // Return an empty audio object so the client can handle it gracefully
+        return { audio: undefined };
     }
-
-    // The audio data is a base64 encoded string after the comma
-    const audioBuffer = Buffer.from(
-      media.url.substring(media.url.indexOf(',') + 1),
-      'base64'
-    );
-    
-    const wavBase64 = await toWav(audioBuffer);
-
-    return {
-      audio: `data:audio/wav;base64,${wavBase64}`,
-    };
   }
 );
