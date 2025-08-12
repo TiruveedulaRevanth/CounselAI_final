@@ -3,6 +3,8 @@
 
 import { personalizeTherapyStyle } from "@/ai/flows/therapy-style-personalization";
 import { summarizeChat } from "@/ai/flows/summarize-chat-flow";
+import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
+import { suggestResource } from "@/ai/flows/suggest-resource-flow";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { LogOut, Mic, Send, Settings, Trash2, MoreHorizontal, MessageSquarePlus, Square, Library, Sparkles, Siren, Edit, Archive, ArchiveX, FilePenLine } from "lucide-react";
@@ -69,6 +71,8 @@ export type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  resourceId?: string;
+  resourceTitle?: string;
 };
 
 export type Chat = {
@@ -157,14 +161,13 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   // Settings state
   const [therapyStyle, setTherapyStyle] = useState(therapyStyles[0].prompt);
   const [selectedLanguage, setSelectedLanguage] = useState(supportedLanguages[0].code);
-  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   
   const [currentProfile, setCurrentProfile] = useState(activeProfile);
   const [isDataLoading, setIsDataLoading] = useState(true);
   
   const speechRecognition = useRef<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const userName = currentProfile.name;
   
   useEffect(() => {
@@ -371,49 +374,42 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     ].filter(group => group.chats.length > 0);
   }, [chats]);
 
-  const speakText = useCallback((text: string) => {
-    if ('speechSynthesis' in window && selectedVoice) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.voice = selectedVoice;
-        utterance.lang = selectedVoice.lang;
-        utterance.onstart = () => setIsSpeaking(true);
-        utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
-
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(utterance);
+  const speakText = useCallback(async (text: string) => {
+    if (isSpeaking) {
+      handleStopSpeaking();
     }
-  }, [selectedVoice]);
+    setIsSpeaking(true);
+    try {
+      const { audio } = await textToSpeech({ text });
+      if (audio) {
+        if (!audioRef.current) {
+          audioRef.current = new Audio();
+          audioRef.current.onended = () => setIsSpeaking(false);
+          audioRef.current.onerror = () => setIsSpeaking(false);
+        }
+        audioRef.current.src = audio;
+        audioRef.current.play();
+      } else {
+        setIsSpeaking(false);
+      }
+    } catch (error) {
+      console.error("Error generating speech:", error);
+      setIsSpeaking(false);
+      toast({
+        variant: "destructive",
+        title: "Speech Error",
+        description: "Could not generate audio for the response.",
+      });
+    }
+  }, [isSpeaking, toast]);
 
   const handleStopSpeaking = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
+    setIsSpeaking(false);
   };
-
-  useEffect(() => {
-    if ('speechSynthesis' in window) {
-      const loadVoices = () => {
-        const allVoices = window.speechSynthesis.getVoices();
-        if (allVoices.length > 0) {
-            setAvailableVoices(allVoices);
-        }
-      };
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-      loadVoices();
-      return () => {
-        window.speechSynthesis.onvoiceschanged = null;
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-      if (availableVoices.length > 0) {
-          const voicesForLanguage = availableVoices.filter(v => v.lang.startsWith(selectedLanguage.substring(0,2)));
-          setSelectedVoice(voicesForLanguage[0] || availableVoices.find(v => v.lang.startsWith('en')) || availableVoices[0]);
-      }
-  }, [selectedLanguage, availableVoices]);
 
 
   useEffect(() => {
@@ -541,10 +537,12 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     }
     
     try {
-        // Start both AI calls in parallel
+        // Start all AI calls in parallel
         const summarizePromise = isFirstMessage 
             ? summarizeChat({ message: text })
             : Promise.resolve(null);
+            
+        const resourcePromise = suggestResource({ query: text });
 
         const responsePromise = personalizeTherapyStyle({
             userName: userName,
@@ -553,7 +551,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             history: historyForAI.slice(0, -1), // Send history *before* the current message
         });
 
-        const [summarizeResult, aiResult] = await Promise.all([summarizePromise, responsePromise]);
+        const [summarizeResult, resourceResult, aiResult] = await Promise.all([summarizePromise, resourcePromise, responsePromise]);
 
         let finalChats = updatedChatsWithUserMessage;
 
@@ -570,6 +568,8 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                 id: Date.now().toString() + "-ai",
                 role: "assistant",
                 content: aiResult.response,
+                resourceId: resourceResult?.id,
+                resourceTitle: resourceResult?.title,
             };
             finalChats = finalChats.map(chat =>
                 chat.id === currentChatId
@@ -724,11 +724,8 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       <DeleteProfileDialog />
       <RenameChatDialog />
        <SettingsDialog
-          availableVoices={availableVoices}
           selectedLanguage={selectedLanguage}
           setSelectedLanguage={setSelectedLanguage}
-          selectedVoice={selectedVoice}
-          setSelectedVoice={setSelectedVoice}
           therapyStyle={therapyStyle}
           setTherapyStyle={setTherapyStyle}
           isSettingsOpen={isSettingsOpen}
@@ -954,5 +951,3 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
-
-    
