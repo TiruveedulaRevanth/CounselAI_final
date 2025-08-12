@@ -483,6 +483,7 @@ const suggestResourceFlow = ai.defineFlow(
         resources: resourcesData 
     });
     
-    return output || {};
+    // Ensure we always return an object that conforms to the schema
+    return output || { id: undefined, title: undefined };
   }
 );
