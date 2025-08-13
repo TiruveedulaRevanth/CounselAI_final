@@ -60,14 +60,21 @@ export default function SettingsDialog({
         .filter(([, value]) => value > 0)
         .map(([name, value]) => {
             const style = therapyStyles.find(s => s.name === name);
-            return style ? `${value}% ${style.name}` : null;
+            return { name: style?.name, value, prompt: style?.prompt };
         });
     
-    if (parts.every(p => p === null)) {
+    if (parts.length === 0) {
       return "Act as a general, supportive AI assistant.";
     }
 
-    return `Synthesize a personality that is a blend of the following traits, weighted by the given percentages: ${parts.filter(Boolean).join(', ')}. Ensure your response style reflects this blend.`;
+    const totalValue = parts.reduce((sum, part) => sum + part.value, 0);
+
+    const weightedParts = parts.map(part => {
+        const percentage = Math.round((part.value / totalValue) * 100);
+        return `${percentage}% ${part.name}`;
+    });
+
+    return `Synthesize a personality that is a blend of the following traits, weighted by the given percentages: ${weightedParts.join(', ')}. Ensure your response style reflects this blend.`;
   }
   
   useEffect(() => {
@@ -92,23 +99,6 @@ export default function SettingsDialog({
 
   const handleSliderChange = (personaName: string, value: number[]) => {
     const newCustomPersona = { ...customPersona, [personaName]: value[0] };
-
-    // Normalize so the sum is 100
-    const total = Object.values(newCustomPersona).reduce((sum, v) => sum + v, 0);
-    if (total > 0) { // Avoid division by zero
-        const scale = 100 / total;
-        for (const key in newCustomPersona) {
-            newCustomPersona[key] = Math.round(newCustomPersona[key] * scale);
-        }
-    }
-    // Due to rounding, the sum might not be exactly 100. Let's adjust the largest value.
-    const finalTotal = Object.values(newCustomPersona).reduce((sum, v) => sum + v, 0);
-    const diff = 100 - finalTotal;
-    if (diff !== 0) {
-        const maxKey = Object.keys(newCustomPersona).reduce((a, b) => newCustomPersona[a] > newCustomPersona[b] ? a : b);
-        newCustomPersona[maxKey] += diff;
-    }
-    
     setCustomPersona(newCustomPersona);
   }
 
@@ -160,7 +150,7 @@ export default function SettingsDialog({
           {isCustomMode && (
             <div className="space-y-4 p-4 border rounded-lg">
               <Label className="font-semibold text-base">Customize Your Persona Blend</Label>
-              <p className="text-sm text-muted-foreground -mt-2">Adjust the sliders to mix different personality traits.</p>
+              <p className="text-sm text-muted-foreground -mt-2">Adjust the sliders to mix different personality traits. The percentages will be calculated from the mix.</p>
               {Object.entries(customPersona).map(([name, value]) => (
                 <div key={name} className="grid gap-2">
                     <div className="flex justify-between items-center">
