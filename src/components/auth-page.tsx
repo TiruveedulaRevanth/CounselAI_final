@@ -159,7 +159,7 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
   
   const renderLogin = () => (
     <div className="w-full max-w-sm">
-        <div className="p-1 rounded-xl bg-gradient-to-br from-[#8134AF] via-[#DD2A7B] to-[#FEDA77]">
+        <div className="p-1 rounded-xl bg-gradient-to-br from-primary/70 via-accent to-primary/30">
             <Card className="border-none">
                 <CardHeader className="text-center">
                     <BrainLogo className="w-16 h-16 mx-auto text-primary mb-4"/>
@@ -181,7 +181,7 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit" className="w-full text-white font-bold bg-gradient-to-r from-[#8134AF] via-[#DD2A7B] to-[#FEDA77] hover:from-[#8134AF]/90 hover:via-[#DD2A7B]/90 hover:to-[#FEDA77]/90">
+                            <Button type="submit" className="w-full text-white font-bold bg-primary hover:bg-primary/90">
                                 Continue
                             </Button>
                         </form>
@@ -200,7 +200,7 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
 
   const renderSignUp = () => (
     <div className="w-full max-w-sm">
-        <div className="p-1 rounded-xl bg-gradient-to-br from-[#8134AF] via-[#DD2A7B] to-[#FEDA77]">
+        <div className="p-1 rounded-xl bg-gradient-to-br from-primary/70 via-accent to-primary/30">
             <div className="w-full bg-background rounded-lg p-8">
                 <div className="text-center mb-6">
                     <BrainLogo className="w-12 h-12 mx-auto text-primary mb-4"/>
@@ -252,7 +252,7 @@ export default function AuthPage({ onSignInSuccess, existingProfiles, setProfile
                                 </FormItem>
                             )}
                         />
-                        <Button type="submit" className="w-full !mt-6 text-white font-bold bg-gradient-to-r from-[#8134AF] via-[#DD2A7B] to-[#FEDA77] hover:from-[#8134AF]/90 hover:via-[#DD2A7B]/90 hover:to-[#FEDA77]/90">
+                        <Button type="submit" className="w-full !mt-6 text-white font-bold bg-primary hover:bg-primary/90">
                             Sign Up
                         </Button>
                     </form>

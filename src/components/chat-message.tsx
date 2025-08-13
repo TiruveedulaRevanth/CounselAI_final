@@ -34,10 +34,10 @@ export default function ChatMessage({ message, userName, isInterim = false, onSp
         </Avatar>
       )}
       <div className={cn("flex flex-col", isAssistant ? "items-start" : "items-end")}>
-        <p className="font-bold mb-1">{isAssistant ? "CounselAI" : "You"}</p>
+        <p className="font-bold mb-1 text-sm text-foreground/80">{isAssistant ? "CounselAI" : "You"}</p>
         <div className={cn(
-            "p-3 rounded-lg text-base leading-relaxed whitespace-pre-wrap max-w-md md:max-w-lg lg:max-w-xl",
-            isAssistant ? "bg-assistant-bubble text-secondary-foreground" : "bg-user-bubble text-white"
+            "p-3 rounded-lg text-base leading-relaxed whitespace-pre-wrap max-w-md md:max-w-lg lg:max-w-xl shadow-sm",
+            isAssistant ? "bg-assistant-bubble text-secondary-foreground" : "bg-user-bubble text-foreground"
         )}>
             {message.content}
         </div>
@@ -55,7 +55,7 @@ export default function ChatMessage({ message, userName, isInterim = false, onSp
       </div>
        {!isAssistant && (
          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-destructive text-destructive-foreground font-bold">
+            <AvatarFallback className="bg-accent text-accent-foreground font-bold">
                 {userName ? userName.charAt(0).toUpperCase() : <User size={20} />}
             </AvatarFallback>
         </Avatar>
@@ -72,7 +72,7 @@ const Loading = () => (
             </AvatarFallback>
         </Avatar>
         <div className="flex flex-col">
-            <p className="font-bold mb-1">CounselAI</p>
+            <p className="font-bold mb-1 text-sm text-foreground/80">CounselAI</p>
             <div className="p-3 rounded-lg bg-assistant-bubble flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-muted-foreground animate-pulse" style={{ animationDelay: '0ms' }} />
                 <span className="h-2 w-2 rounded-full bg-muted-foreground animate-pulse" style={{ animationDelay: '200ms' }} />
