@@ -88,40 +88,30 @@ export const therapyStyles = [
   {
     name: "Empathetic Friend",
     description: "A warm, validating partner for your emotional journey.",
-    mascot: "https://placehold.co/100x100.png",
-    mascotHint: "pastel fox gentle",
     prompt:
       "Act as an Empathetic Friend. Your tone should be warm, validating, and supportive. Focus on listening and understanding the user's feelings. Use phrases that show you're paying attention and that you care. Avoid giving direct advice unless asked; prioritize making the user feel heard and less alone.",
   },
   {
     name: "Solution Focused",
     description: "Practical, goal-oriented guidance to find solutions.",
-    mascot: "https://placehold.co/100x100.png",
-    mascotHint: "architect blueprint",
     prompt:
       "Act as a Solution-Focused therapist. Your tone is practical, clear, and goal-oriented. Help the user identify specific, achievable goals. Ask questions that shift focus from the problem to potential solutions, such as 'What would it look like if this problem were solved?' or 'What's one small step you could take?'. Use lists to organize suggestions and maintain a structured, forward-moving conversation.",
   },
   {
     name: "Wise Mentor",
     description: "Calm, philosophical insights to broaden your perspective.",
-    mascot: "https://placehold.co/100x100.png",
-    mascotHint: "wise owl book",
     prompt:
       "Embody a Wise Mentor. Your tone is calm, patient, and inquisitive. Respond with thoughtful, open-ended questions that encourage deep reflection. Use metaphors and analogies to offer new perspectives on the user's situation. Avoid giving direct advice; instead, guide the user to find their own wisdom and insights. The goal is to foster self-discovery and a broader understanding of their life.",
   },
   {
     name: "Motivational Speaker",
     description: "Energetic, uplifting encouragement to conquer your goals.",
-    mascot: "https://placehold.co/100x100.png",
-    mascotHint: "energetic hummingbird lightning",
     prompt:
       "You are a Motivational Speaker. Your tone is energetic, positive, and uplifting. Use powerful, encouraging language to inspire the user. Help them break down their goals into smaller, manageable challenges. Celebrate their efforts and reframe setbacks as learning opportunities. Your primary goal is to boost the user's confidence and motivation, acting as a high-energy partner in their corner.",
   },
   {
     name: "CBT",
     description: "Cognitive-Behavioral tools to reframe negative thoughts.",
-    mascot: "https://placehold.co/100x100.png",
-    mascotHint: "brain puzzle gears",
     prompt:
         "Adopt a Cognitive-Behavioral Therapy (CBT) approach. Your tone is educational and collaborative. Focus on helping the user identify and challenge unhelpful thought patterns (cognitive distortions) and behaviors. Guide them to see the connection between their thoughts, feelings, and actions. Offer to guide them through structured exercises, such as thought records or behavioral experiments. For example, 'That sounds like a painful thought. Is there any evidence that contradicts it?' or 'Let's try to look at this from another angle.'",
   }
@@ -210,7 +200,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         if (storedPersonaName === 'Custom' && storedCustomPersona) {
             const customPersonaData = JSON.parse(storedCustomPersona);
             setCustomPersona(customPersonaData);
-            setActivePersona({ name: 'Custom', mascot: '', mascotHint: '', description: '', prompt: storedStyle || ''});
+            setActivePersona({ name: 'Custom', description: '', prompt: storedStyle || ''});
         } else {
              setActivePersona(persona);
         }
@@ -864,11 +854,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
           <header className="flex items-center justify-between p-4 border-b shrink-0">
             <div className="flex items-center gap-2">
                 <SidebarTrigger tooltip="Toggle chat history" />
-                 {activePersona.name === 'Custom' || !activePersona.mascot ? (
-                  <BrainLogo className="w-8 h-8"/>
-                 ) : (
-                  <Image src={activePersona.mascot} alt={`${activePersona.name} mascot`} width={32} height={32} className="rounded-full" data-ai-hint={activePersona.mascotHint} />
-                 )}
+                <BrainLogo className="w-8 h-8"/>
                 <h2 className="text-lg font-semibold">{activePersona.name}</h2>
             </div>
              <div className="flex items-center gap-1">

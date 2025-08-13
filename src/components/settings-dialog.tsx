@@ -23,6 +23,7 @@ import { Card, CardHeader } from "./ui/card";
 import { cn } from "@/lib/utils";
 import Image from 'next/image';
 import { Slider } from "./ui/slider";
+import { BrainLogo } from "./brain-logo";
 
 type Persona = typeof therapyStyles[0];
 
@@ -34,7 +35,7 @@ interface SettingsDialogProps {
   isSettingsOpen: boolean;
   setIsSettingsOpen: (isOpen: boolean) => void;
   activePersona: Persona | { name: string };
-  setActivePersona: (persona: Persona | { name: string, prompt: string, mascot: string, mascotHint: string }) => void;
+  setActivePersona: (persona: Persona | { name: string, prompt: string }) => void;
   customPersona: CustomPersona;
   setCustomPersona: (persona: CustomPersona) => void;
 }
@@ -86,8 +87,6 @@ export default function SettingsDialog({
     setActivePersona({
         name: 'Custom',
         prompt: generateCustomPrompt(customPersona),
-        mascot: '', // No mascot for custom
-        mascotHint: ''
     });
   }
 
@@ -123,7 +122,7 @@ export default function SettingsDialog({
       )}
     >
       <CardHeader className="items-center text-center p-4">
-        <Image src={persona.mascot} alt={`${persona.name} Mascot`} width={60} height={60} className="rounded-full mb-2" data-ai-hint={persona.mascotHint} />
+        <BrainLogo className="w-[60px] h-[60px] mb-2" />
         <h3 className="font-semibold">{persona.name}</h3>
         <p className="text-xs text-muted-foreground">{persona.description}</p>
       </CardHeader>
