@@ -43,8 +43,8 @@ body {
     --sidebar-accent-foreground: 240 10% 3.9%;
     --sidebar-ring: 260 80% 55%;
     
-    --user-bubble: 260 80% 94%; /* Light Purple */
-    --assistant-bubble: 210 20% 92%;
+    --user-bubble: 262 80% 50%; /* Deep vibrant purple */
+    --assistant-bubble: 210 30% 95%; /* Lighter grey */
   }
   .dark {
     --background: 228 9% 10%;
@@ -75,7 +75,7 @@ body {
     --sidebar-accent: 228 9% 25%;
     --sidebar-accent-foreground: 210 40% 98%;
 
-    --user-bubble: 260 30% 25%; /* Dark Purple */
+    --user-bubble: 262 70% 55%; /* Deep vibrant purple */
     --assistant-bubble: 217 33% 22%;
   }
 }

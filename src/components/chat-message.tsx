@@ -37,7 +37,7 @@ export default function ChatMessage({ message, userName, isInterim = false, onSp
         <p className="font-bold mb-1 text-sm text-foreground/80">{isAssistant ? "CounselAI" : "You"}</p>
         <div className={cn(
             "p-3 rounded-lg text-base leading-relaxed whitespace-pre-wrap max-w-md md:max-w-lg lg:max-w-xl shadow",
-            isAssistant ? "bg-secondary" : "bg-primary text-primary-foreground"
+            isAssistant ? "bg-assistant-bubble" : "bg-user-bubble text-primary-foreground"
         )}>
             {message.content}
         </div>
