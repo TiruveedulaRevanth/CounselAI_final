@@ -10,7 +10,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import wav from 'wav';
 
 const TextToSpeechInputSchema = z.object({
   text: z.string().describe('The text to be converted to speech.'),
@@ -28,33 +27,6 @@ export async function textToSpeech(input: TextToSpeechInput): Promise<TextToSpee
 }
 
 
-async function toWav(
-  pcmData: Buffer,
-  channels = 1,
-  rate = 24000,
-  sampleWidth = 2
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({
-      channels,
-      sampleRate: rate,
-      bitDepth: sampleWidth * 8,
-    });
-
-    let bufs: Buffer[] = [];
-    writer.on('error', reject);
-    writer.on('data', (d) => {
-      bufs.push(d);
-    });
-    writer.on('end', () => {
-      resolve(Buffer.concat(bufs).toString('base64'));
-    });
-
-    writer.write(pcmData);
-    writer.end();
-  });
-}
-
 const textToSpeechFlow = ai.defineFlow(
   {
     name: 'textToSpeechFlow',
@@ -63,41 +35,33 @@ const textToSpeechFlow = ai.defineFlow(
   },
   async ({ text }) => {
     try {
-        const { media } = await ai.generate({
-        model: 'googleai/gemini-2.5-flash-preview-tts',
-        config: {
-            responseModalities: ['AUDIO'],
-            speechConfig: {
-            voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: 'Algenib' },
-            },
-            },
-        },
-        prompt: text,
-        });
-
-        if (!media) {
-            console.error('No audio media was returned from the TTS model.');
-            return { audio: undefined };
-        }
-
-        // The audio data is a base64 encoded string after the comma
-        const audioBuffer = Buffer.from(
-        media.url.substring(media.url.indexOf(',') + 1),
-        'base64'
+        const response = await fetch(
+            "https://router.huggingface.co/fal-ai/fal-ai/chatterbox/text-to-speech",
+            {
+                headers: {
+                    Authorization: `Bearer ${process.env.HF_TOKEN}`,
+                    "Content-Type": "application/json",
+                },
+                method: "POST",
+                body: JSON.stringify({ text }),
+            }
         );
         
-        const wavBase64 = await toWav(audioBuffer);
+        const result = await response.json();
 
-        return {
-        audio: `data:audio/wav;base64,${wavBase64}`,
-        };
+        if (result && result.audio_url) {
+             // The result from this API is a base64 encoded string, but without the data URI prefix.
+             return {
+                audio: `data:audio/wav;base64,${result.audio_url}`,
+            };
+        } else {
+            console.error('No audio data was returned from the TTS model.');
+            return { audio: undefined };
+        }
     } catch(error) {
-        console.error("Error in textToSpeechFlow (likely a rate limit or API issue):", error);
+        console.error("Error in textToSpeechFlow (Hugging Face API):", error);
         // Return an empty audio object so the client can handle it gracefully
         return { audio: undefined };
     }
   }
 );
-
-    
