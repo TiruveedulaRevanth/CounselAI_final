@@ -10,6 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { InferenceClient } from '@huggingface/inference';
 
 const TextToSpeechInputSchema = z.object({
   text: z.string().describe('The text to be converted to speech.'),
@@ -26,6 +27,7 @@ export async function textToSpeech(input: TextToSpeechInput): Promise<TextToSpee
   return textToSpeechFlow(input);
 }
 
+const hf = new InferenceClient(process.env.HF_TOKEN);
 
 const textToSpeechFlow = ai.defineFlow(
   {
@@ -35,24 +37,17 @@ const textToSpeechFlow = ai.defineFlow(
   },
   async ({ text }) => {
     try {
-        const response = await fetch(
-            "https://router.huggingface.co/fal-ai/fal-ai/chatterbox/text-to-speech",
-            {
-                headers: {
-                    Authorization: `Bearer ${process.env.HF_TOKEN}`,
-                    "Content-Type": "application/json",
-                },
-                method: "POST",
-                body: JSON.stringify({ text }),
-            }
-        );
-        
-        const result = await response.json();
+        const audioBlob = await hf.textToSpeech({
+            model: 'ResembleAI/chatterbox',
+            inputs: text,
+            provider: 'fal-ai',
+        });
 
-        if (result && result.audio_url) {
-             // The result from this API is a base64 encoded string, but without the data URI prefix.
+        if (audioBlob) {
+             const buffer = await audioBlob.arrayBuffer();
+             const base64Audio = Buffer.from(buffer).toString('base64');
              return {
-                audio: `data:audio/wav;base64,${result.audio_url}`,
+                audio: `data:audio/wav;base64,${base64Audio}`,
             };
         } else {
             console.error('No audio data was returned from the TTS model.');
