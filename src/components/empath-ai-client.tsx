@@ -607,6 +607,12 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
         const [summarizeResult, resourceResult, aiResult] = await Promise.all([summarizePromise, resourcePromise, responsePromise]);
 
+        // Check for crisis redirection
+        if (aiResult.needsHelp) {
+            window.location.href = 'https://www.befrienders.org/';
+            return; // Stop further processing
+        }
+        
         let finalChats = updatedChatsWithUserMessage;
 
         if (summarizeResult?.title) {

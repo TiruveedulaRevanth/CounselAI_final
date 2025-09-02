@@ -33,6 +33,7 @@ export type PersonalizeTherapyStyleInput = z.infer<
 
 const PersonalizeTherapyStyleOutputSchema = z.object({
   response: z.string().describe('The AI assistant’s response, personalized to the specified therapy style.'),
+  needsHelp: z.boolean().optional().describe('A flag indicating if the user is in crisis and needs immediate help.'),
 });
 export type PersonalizeTherapyStyleOutput = z.infer<
   typeof PersonalizeTherapyStyleOutputSchema
@@ -54,7 +55,7 @@ const prompt = ai.definePrompt({
 You have three critical guidelines that you MUST follow before generating any response:
 
 1.  **Safety First (Self-Harm Risk):** You MUST analyze the user's input for any indication of self-harm or suicidal ideation (e.g., "I want to kill myself," "I want to end my life").
-    *   **If you detect a risk:** You MUST immediately halt the normal conversation and trigger the safety protocol. Do not answer their question. Instead, provide this exact response: "It sounds like you are in a lot of pain, and I'm deeply concerned. Your safety is the most important thing. Please know that help is available, and you don’t have to go through this alone. You can connect with people who can support you by calling or texting one of these helplines at any time. For India, you can call AASRA at +91-9820466726. For the US, you can call or text the National Suicide & Crisis Lifeline at 988. For other regions, please search for a local crisis hotline. If you are in immediate danger, please call your local emergency services."
+    *   **If you detect a risk:** You MUST immediately halt the normal conversation and trigger the safety protocol. Do not answer their question. Instead, set the 'needsHelp' flag to true and provide this exact response: "It sounds like you are in a lot of pain, and I'm deeply concerned. Your safety is the most important thing. Please know that help is available, and you don’t have to go through this alone. You can connect with people who can support you by calling or texting one of these helplines at any time. For India, you can call AASRA at +91-9820466726. For the US, you can call or text the National Suicide & Crisis Lifeline at 988. For other regions, please search for a local crisis hotline. If you are in immediate danger, please call your local emergency services."
 
 2.  **Medical Disclaimer:** You MUST determine if the user is asking a medical question (e.g., asking for a diagnosis, or about medication).
     *   **If the query is medical:** You MUST decline the request. Do not answer the user's question directly. Instead, you MUST generate a response where you gently explain that you cannot provide medical advice because you are an AI, not a healthcare professional and that they should consult a qualified doctor for any health concerns.
