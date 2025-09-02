@@ -19,7 +19,7 @@ const TextToSpeechInputSchema = z.object({
 export type TextToSpeechInput = z.infer<typeof TextToSpeechInputSchema>;
 
 const TextToSpeechOutputSchema = z.object({
-  audio: z.string().describe("The generated audio as a data URI in WAV format. Expected format: 'data:audio/wav;base64,<encoded_data>'.").optional(),
+  audio: z.string().describe("The generated audio as a data URI in WAV format. Expected format: 'data:audio/wav;base64,<encoded_data>'").optional(),
 });
 export type TextToSpeechOutput = z.infer<typeof TextToSpeechOutputSchema>;
 
@@ -49,17 +49,24 @@ const textToSpeechFlow = ai.defineFlow(
         prompt: text,
       });
 
-      if (!media) {
+      if (!media || !media.url) {
         console.error('No audio data was returned from the TTS model.');
         return { audio: undefined };
       }
 
-      const audioBuffer = Buffer.from(
+      // The audio data is Base64 encoded PCM. We need to decode it first.
+      const pcmBuffer = Buffer.from(
         media.url.substring(media.url.indexOf(',') + 1),
         'base64'
       );
 
-      const base64Wav = await toWav(audioBuffer);
+      // Convert the raw PCM buffer to a WAV buffer.
+      const base64Wav = await toWav(pcmBuffer);
+      
+      if (!base64Wav) {
+        console.error('Failed to convert PCM to WAV.');
+        return { audio: undefined };
+      }
 
       return {
           audio: `data:audio/wav;base64,${base64Wav}`,
@@ -74,25 +81,30 @@ const textToSpeechFlow = ai.defineFlow(
   }
 );
 
-
+/**
+ * Converts raw PCM audio data into a Base64-encoded WAV string.
+ */
 async function toWav(
   pcmData: Buffer,
   channels = 1,
-  rate = 24000,
-  sampleWidth = 2
+  rate = 24000, // Gemini TTS outputs at 24kHz
+  sampleWidth = 2 // 16-bit audio
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const writer = new wav.Writer({
       channels,
       sampleRate: rate,
-      bitDepth: sampleWidth * 8,
+      bitDepth: sampleWidth * 8, // 16 bits
     });
 
     const bufs: Buffer[] = [];
     writer.on('error', reject);
-    writer.on('data', (d) => bufs.push(d));
-    writer.on('end', () => resolve(Buffer.concat(bufs).toString('base64')));
-    writer.write(pcmData);
-    writer.end();
+    writer.on('data', (chunk) => bufs.push(chunk));
+    writer.on('end', () => {
+      const wavBuffer = Buffer.concat(bufs);
+      resolve(wavBuffer.toString('base64'));
+    });
+
+    writer.end(pcmData);
   });
 }
