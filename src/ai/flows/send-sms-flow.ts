@@ -2,15 +2,16 @@
 'use server';
 
 /**
- * @fileOverview An AI agent that constructs and sends an emergency SMS.
+ * @fileOverview An AI agent that constructs and sends an emergency SMS using Twilio.
  *
- * - sendSms - A function that constructs the SMS and simulates sending it.
+ * - sendSms - A function that constructs the SMS and sends it.
  * - SendSmsInput - The input type for the sendSms function.
  * - SendSmsOutput - The return type for the sendSms function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import Twilio from 'twilio';
 
 const SendSmsInputSchema = z.object({
   userName: z.string().describe("The name of the user in crisis."),
@@ -50,21 +51,38 @@ const sendSmsFlow = ai.defineFlow(
       if (!output || !output.message) {
         throw new Error("AI failed to generate an SMS message.");
       }
+      
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
 
-      // In a real application, this is where you would integrate with an
-      // SMS gateway API (like Twilio) to send the message.
-      // For this simulation, we will log the action to the console.
-      console.log("==================================================");
-      console.log("EMERGENCY SMS SIMULATION");
-      console.log(`Sending SMS to: ${input.emergencyContactPhone}`);
-      console.log(`Message: ${output.message}`);
-      console.log("==================================================");
+      if (!accountSid || !authToken || !twilioPhone) {
+        console.error("Twilio credentials are not configured in .env file.");
+        // We will log a simulation, but return failure to the client.
+        console.log("==================================================");
+        console.log("EMERGENCY SMS SIMULATION (Twilio not configured)");
+        console.log(`Intended recipient: ${input.emergencyContactPhone}`);
+        console.log(`Message: ${output.message}`);
+        console.log("==================================================");
+        return {
+          success: false,
+          message: "SMS sending is not configured on the server."
+        };
+      }
 
-      // We'll return success as true to simulate a successful API call.
+      const client = Twilio(accountSid, authToken);
+      
+      await client.messages.create({
+         body: output.message,
+         from: twilioPhone,
+         to: input.emergencyContactPhone
+       });
+
       return {
         success: true,
         message: output.message,
       };
+
     } catch (error) {
        console.error("Error in sendSmsFlow:", error);
        return { 
@@ -74,5 +92,3 @@ const sendSmsFlow = ai.defineFlow(
     }
   }
 );
-
-    
