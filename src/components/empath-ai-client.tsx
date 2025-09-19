@@ -639,7 +639,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         });
 
         // Trigger journal update in the background, but don't wait for it
-        if (historyForAI.length % 3 === 0) { // Update journal every 3 messages
+        if (historyForAI.length > 0 && historyForAI.length % 3 === 0) { // Update journal every 3 messages
             updateJournal({ currentJournal: journal, history: historyForAI })
                 .then(newJournal => setJournal(newJournal));
         }
