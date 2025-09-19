@@ -218,7 +218,15 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         setChats(parsedChats);
 
         const storedUserContext = localStorage.getItem(`counselai-user-context-${activeProfile.id}`);
-        setUserContext(storedUserContext ? JSON.parse(storedUserContext) : initialUserContext);
+        let parsedUserContext = storedUserContext ? JSON.parse(storedUserContext) : initialUserContext;
+
+        // Data migration: Handle old data structure with "struggles"
+        if (parsedUserContext && parsedUserContext.struggles && !parsedUserContext.problems) {
+            parsedUserContext.problems = parsedUserContext.struggles;
+            delete parsedUserContext.struggles;
+        }
+
+        setUserContext(parsedUserContext);
 
         const storedUserJournal = localStorage.getItem(`counselai-user-journal-${activeProfile.id}`);
         setUserJournalEntries(storedUserJournal || "");
@@ -651,7 +659,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
         // Trigger journal update in the background, but don't wait for it
         if (historyForAI.length > 0 && historyForAI.length % 3 === 0) { // Update journal every 3 messages
-            updateJournal({ currentUserContext: userContext, currentChatJournal, history: historyForAI })
+            updateJournal({ currentUserContext, currentChatJournal, history: historyForAI })
                 .then(newJournals => {
                     setUserContext(newJournals.userContext);
                     // Find the chat and update its journal
@@ -1094,4 +1102,5 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   );
 }
 
+    
     
