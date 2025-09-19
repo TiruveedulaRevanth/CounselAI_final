@@ -59,7 +59,7 @@ export default function JournalDialog({
                     
                     <h2 className="text-lg font-semibold text-primary pt-4 mt-4 border-t">Current Chat</h2>
                     <JournalSection title="Suggested Solutions" content={chatJournal?.suggestedSolutions} />
-                    <JournalSection title="Progress Summary" content={chatJournal?.progressSummary} isProgress={true} />
+                    <JournalSection title="Progress Summary" content={chatJournal?.progressSummary} />
                 </div>
             </ScrollArea>
           </TabsContent>
@@ -81,12 +81,11 @@ export default function JournalDialog({
 interface JournalSectionProps {
     title: string;
     content?: string | null;
-    isProgress?: boolean;
 }
 
-const JournalSection = ({ title, content, isProgress=false }: JournalSectionProps) => (
+const JournalSection = ({ title, content }: JournalSectionProps) => (
     <div>
-        <h3 className={`font-semibold mb-1 ${isProgress ? 'text-primary' : ''}`}>{title}</h3>
+        <h3 className='font-semibold mb-1'>{title}</h3>
         <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content || "Not yet analyzed."}</p>
     </div>
 );
