@@ -6,9 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "./ui/button";
 import { Play, Pause } from "lucide-react";
 
-// IMPORTANT: Replace this with the actual URL of your audio file
-// hosted on a service like Firebase Storage.
-const audioUrl = "https://storage.googleapis.com/studioprod-exports-prod/e49a8b5b-5b8c-4a4b-97c9-5b6d5104c90d/projects/jYVLNn/assets/calm-music.mp3";
+// Use the local audio file from the public directory.
+const audioUrl = "/calm-music.mp3";
 
 
 export default function MindfulnessMeditation() {
@@ -37,6 +36,7 @@ export default function MindfulnessMeditation() {
           ref={audioRef}
           src={audioUrl}
           onEnded={() => setIsPlaying(false)}
+          preload="auto"
         />
         <Button onClick={togglePlayPause} size="lg" className="rounded-full h-20 w-20">
           {isPlaying ? <Pause className="h-10 w-10" /> : <Play className="h-10 w-10" />}
