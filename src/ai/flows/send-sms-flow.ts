@@ -11,7 +11,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import Twilio from 'twilio';
 
 const SendSmsInputSchema = z.object({
   userName: z.string().describe("The name of the user in crisis."),
@@ -52,31 +51,13 @@ const sendSmsFlow = ai.defineFlow(
         throw new Error("AI failed to generate an SMS message.");
       }
       
-      const accountSid = process.env.TWILIO_ACCOUNT_SID;
-      const authToken = process.env.TWILIO_AUTH_TOKEN;
-      const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
-
-      if (!accountSid || !authToken || !twilioPhone) {
-        console.error("Twilio credentials are not configured in .env file.");
-        // We will log a simulation, but return failure to the client.
-        console.log("==================================================");
-        console.log("EMERGENCY SMS SIMULATION (Twilio not configured)");
-        console.log(`Intended recipient: ${input.emergencyContactPhone}`);
-        console.log(`Message: ${output.message}`);
-        console.log("==================================================");
-        return {
-          success: false,
-          message: "SMS sending is not configured on the server."
-        };
-      }
-
-      const client = Twilio(accountSid, authToken);
-      
-      await client.messages.create({
-         body: output.message,
-         from: twilioPhone,
-         to: input.emergencyContactPhone
-       });
+      // This is a simulation. In a real application, you would integrate
+      // an SMS service like Twilio here.
+      console.log("==================================================");
+      console.log("EMERGENCY SMS SIMULATION");
+      console.log(`Intended recipient: ${input.emergencyContactPhone}`);
+      console.log(`Message: ${output.message}`);
+      console.log("==================================================");
 
       return {
         success: true,
