@@ -884,7 +884,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             <div className="flex items-center gap-2">
                 <SidebarTrigger tooltip="Toggle chat history" />
                 <BrainLogo className="w-8 h-8"/>
-                <h2 className="text-lg font-semibold">{activePersona.name}</h2>
+                <h2 className="text-lg font-semibold">CounselAI - {activePersona.name}</h2>
             </div>
              <div className="flex items-center gap-1">
                 <ThemeToggle />
@@ -1032,5 +1032,3 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
-
-    
