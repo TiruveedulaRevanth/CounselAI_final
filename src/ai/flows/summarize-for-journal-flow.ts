@@ -54,7 +54,8 @@ const summarizeForJournalFlow = ai.defineFlow(
     } catch (error) {
        console.error("Error in summarizeForJournalFlow:", error);
     }
-    // Return a truncated version of the original message as a fallback.
+    // Return a truncated version of the original message as a fallback, wrapped in the correct object structure.
     return { summary: input.message.substring(0, 100) + '...' };
   }
 );
+
