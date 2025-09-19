@@ -60,7 +60,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import Image from 'next/image';
-import type { Journal } from "@/ai/schemas/journal";
+import type { UserContext, ChatJournal } from "@/ai/schemas/journal";
 import JournalDialog from "./journal-dialog";
 
 declare global {
@@ -83,6 +83,7 @@ export type Chat = {
   name: string;
   messages: Message[];
   createdAt: number;
+  journal: ChatJournal;
 };
 
 type DeletionScope = "today" | "week" | "month" | "all";
@@ -138,10 +139,13 @@ interface EmpathAIClientProps {
     onSignOut: () => void;
 }
 
-const initialJournal: Journal = {
+const initialUserContext: UserContext = {
     personality: "Not yet analyzed.",
     strengths: "Not yet analyzed.",
     struggles: "Not yet analyzed.",
+};
+
+const initialChatJournal: ChatJournal = {
     suggestedSolutions: "Not yet analyzed.",
     progressSummary: "No progress to report yet."
 };
@@ -150,7 +154,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   const { toast } = useToast();
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [journal, setJournal] = useState<Journal>(initialJournal);
+  const [userContext, setUserContext] = useState<UserContext>(initialUserContext);
   const [userJournalEntries, setUserJournalEntries] = useState<string>("");
   
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -206,15 +210,15 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
   useEffect(() => {
     setCurrentProfile(activeProfile);
-    // When profile changes, load their chats and journal
+    // When profile changes, load their data
     setIsDataLoading(true);
     try {
         const storedChats = localStorage.getItem(`counselai-chats-${activeProfile.id}`);
         const parsedChats = storedChats ? JSON.parse(storedChats) : [];
         setChats(parsedChats);
 
-        const storedJournal = localStorage.getItem(`counselai-journal-${activeProfile.id}`);
-        setJournal(storedJournal ? JSON.parse(storedJournal) : initialJournal);
+        const storedUserContext = localStorage.getItem(`counselai-user-context-${activeProfile.id}`);
+        setUserContext(storedUserContext ? JSON.parse(storedUserContext) : initialUserContext);
 
         const storedUserJournal = localStorage.getItem(`counselai-user-journal-${activeProfile.id}`);
         setUserJournalEntries(storedUserJournal || "");
@@ -258,7 +262,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   useEffect(() => {
     if (!isDataLoading) {
         localStorage.setItem(`counselai-chats-${currentProfile.id}`, JSON.stringify(chats));
-        localStorage.setItem(`counselai-journal-${currentProfile.id}`, JSON.stringify(journal));
+        localStorage.setItem(`counselai-user-context-${currentProfile.id}`, JSON.stringify(userContext));
         localStorage.setItem(`counselai-user-journal-${currentProfile.id}`, userJournalEntries);
         localStorage.setItem(`counselai-therapy-style-${currentProfile.id}`, therapyStyle);
         localStorage.setItem(`counselai-persona-${currentProfile.id}`, activePersona.name);
@@ -266,7 +270,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             localStorage.setItem(`counselai-custom-persona-${currentProfile.id}`, JSON.stringify(customPersona));
         }
     }
-  }, [chats, journal, userJournalEntries, therapyStyle, activePersona, customPersona, currentProfile.id, isDataLoading]);
+  }, [chats, userContext, userJournalEntries, therapyStyle, activePersona, customPersona, currentProfile.id, isDataLoading]);
 
 
   const handleSignOut = () => {
@@ -303,7 +307,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     localStorage.removeItem(`counselai-therapy-style-${currentProfile.id}`);
     localStorage.removeItem(`counselai-persona-${currentProfile.id}`);
     localStorage.removeItem(`counselai-custom-persona-${currentProfile.id}`);
-    localStorage.removeItem(`counselai-journal-${currentProfile.id}`);
+    localStorage.removeItem(`counselai-user-context-${currentProfile.id}`);
     localStorage.removeItem(`counselai-user-journal-${currentProfile.id}`);
     
     toast({
@@ -320,6 +324,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       name: "New Chat",
       messages: [],
       createdAt: Date.now(),
+      journal: initialChatJournal,
     };
     const updatedChats = [newChat, ...chats];
     setChats(updatedChats);
@@ -588,6 +593,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             name: "New Chat",
             messages: [],
             createdAt: Date.now(),
+            journal: initialChatJournal,
         };
         currentChats = [newChat, ...currentChats];
         currentChat = newChat;
@@ -635,13 +641,20 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             therapyStyle: therapyStyle,
             userInput: text,
             history: historyForAI.slice(0, -1), // Send history *before* the current message
-            journal: journal,
+            userContext: userContext,
+            chatJournal: currentChat.journal,
         });
 
         // Trigger journal update in the background, but don't wait for it
         if (historyForAI.length > 0 && historyForAI.length % 3 === 0) { // Update journal every 3 messages
-            updateJournal({ currentJournal: journal, history: historyForAI })
-                .then(newJournal => setJournal(newJournal));
+            updateJournal({ currentUserContext: userContext, currentChatJournal: currentChat.journal, history: historyForAI })
+                .then(newJournals => {
+                    setUserContext(newJournals.userContext);
+                    // Find the chat and update its journal
+                    setChats(prevChats => prevChats.map(c => 
+                        c.id === currentChatId ? { ...c, journal: newJournals.chatJournal } : c
+                    ));
+                });
         }
 
         const [summarizeResult, resourceResult, aiResult] = await Promise.all([summarizePromise, resourcePromise, responsePromise]);
@@ -860,7 +873,8 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         <JournalDialog 
             isOpen={isJournalOpen}
             onOpenChange={setIsJournalOpen}
-            journal={journal}
+            userContext={userContext}
+            chatJournal={activeChat?.journal || null}
             userEntries={userJournalEntries}
             onUserEntriesChange={setUserJournalEntries}
         />

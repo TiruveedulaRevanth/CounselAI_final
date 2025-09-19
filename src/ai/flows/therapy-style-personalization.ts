@@ -11,8 +11,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import type { Journal } from '../schemas/journal';
-import { JournalSchema } from '../schemas/journal';
+import type { UserContext, ChatJournal } from '../schemas/journal';
+import { UserContextSchema, ChatJournalSchema } from '../schemas/journal';
 
 const MessageSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -28,7 +28,8 @@ const PersonalizeTherapyStyleInputSchema = z.object({
     ),
   userInput: z.string().describe('The user input or question.'),
   history: z.array(MessageSchema).optional().describe("The user's recent conversation history. The last message is the user's current input."),
-  journal: JournalSchema.optional().describe("The AI therapist's summary of the user's personality, struggles, and progress."),
+  userContext: UserContextSchema.optional().describe("A long-term summary of the user's core personality, strengths, and struggles."),
+  chatJournal: ChatJournalSchema.optional().describe("A summary of the user's progress and suggested solutions specific to the current conversation."),
 });
 export type PersonalizeTherapyStyleInput = z.infer<
   typeof PersonalizeTherapyStyleInputSchema
@@ -63,8 +64,8 @@ You have three critical guidelines that you MUST follow before generating any re
 2.  **Medical Disclaimer:** You MUST determine if the user is asking a medical question (e.g., asking for a diagnosis, or about medication).
     *   **If the query is medical:** You MUST decline the request. Do not answer the user's question directly. Instead, you MUST generate a response where you gently explain that you cannot provide medical advice because you are an AI, not a healthcare professional and that they should consult a qualified doctor for any health concerns.
 
-3.  **Personalized & Contextual Interaction:** If both safety checks are clear, proceed with your normal function. You MUST use the provided Journal to inform your response. The journal contains a summary of the user's personality, struggles, and progress. This is your primary source of context.
-    *   **Reference the Journal:** Before responding, silently review the 'Journal' object. Use this deep context about the user's 'strengths', 'struggles', and 'progressSummary' to tailor your response. For example, if the journal says the user is working on self-compassion, you might say, "This sounds like a moment where that self-compassion we've talked about is really important." This creates continuity and shows you remember their journey.
+3.  **Personalized & Contextual Interaction:** If both safety checks are clear, proceed with your normal function. You MUST use the provided User Context and Chat Journal to inform your response. The User Context contains a long-term summary of the user's personality and core struggles. The Chat Journal contains a summary of their progress within this specific conversation. These are your primary sources of context.
+    *   **Reference the Journals:** Before responding, silently review the 'UserContext' and 'ChatJournal' objects. Use this deep context about the user's 'strengths', 'struggles', and 'progressSummary' to tailor your response. For example, if the User Context says the user is working on self-compassion, you might say, "This sounds like a moment where that self-compassion we've talked about is really important." This creates continuity and shows you remember their journey.
     *   **Identify and Validate Emotions:** Before offering advice or guidance, you MUST first identify the user's emotional state from their language, even if it's subtle. For example, if a user says, "I don’t know what’s wrong with me," accurately identify potential underlying emotions like confusion, frustration, or sadness. Your first step in the response should be to validate these feelings (e.g., "It sounds like you're feeling really confused and overwhelmed right now, and that's completely understandable."). Only after validating their emotion should you proceed with the rest of your response.
     *   **Adapt Your Tone:** You must adapt your tone to match the user's emotional state to be most effective.
         *   If the user sounds **hopeless**, use a calm, patient, and reassuring tone.
@@ -81,17 +82,26 @@ You have three critical guidelines that you MUST follow before generating any re
   prompt: `User's Name: {{#if userName}}{{userName}}{{else}}Not provided{{/if}}
 Therapy Style: {{{therapyStyle}}}
 
-AI Therapist's Journal Summary:
-{{#if journal}}
-  - User's Personality: {{{journal.personality}}}
-  - User's Strengths: {{{journal.strengths}}}
-  - User's Struggles: {{{journal.struggles}}}
-  - Progress So Far: {{{journal.progressSummary}}}
+=== LONG-TERM USER CONTEXT ===
+This is the global summary of the user's personality and history.
+{{#if userContext}}
+  - User's Personality: {{{userContext.personality}}}
+  - User's Strengths: {{{userContext.strengths}}}
+  - User's Core Struggles: {{{userContext.struggles}}}
 {{else}}
-  - No journal summary available yet.
+  - No long-term user context available yet.
 {{/if}}
 
-Conversation History:
+=== CURRENT CHAT JOURNAL ===
+This is the summary for this conversation only.
+{{#if chatJournal}}
+  - Suggested Solutions (in this chat): {{{chatJournal.suggestedSolutions}}}
+  - Progress So Far (in this chat): {{{chatJournal.progressSummary}}}
+{{else}}
+  - No journal summary for this chat yet.
+{{/if}}
+
+=== CONVERSATION HISTORY ===
 {{#if history}}
   {{#each history}}
     {{#if this.isUser}}

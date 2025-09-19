@@ -12,12 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "./ui/scroll-area";
 import { Textarea } from "./ui/textarea";
 import { BookText } from "lucide-react";
-import type { Journal } from "@/ai/schemas/journal";
+import type { UserContext, ChatJournal } from "@/ai/schemas/journal";
 
 interface JournalDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  journal: Journal;
+  userContext: UserContext | null;
+  chatJournal: ChatJournal | null;
   userEntries: string;
   onUserEntriesChange: (entries: string) => void;
 }
@@ -25,7 +26,8 @@ interface JournalDialogProps {
 export default function JournalDialog({
   isOpen,
   onOpenChange,
-  journal,
+  userContext,
+  chatJournal,
   userEntries,
   onUserEntriesChange,
 }: JournalDialogProps) {
@@ -50,11 +52,14 @@ export default function JournalDialog({
           <TabsContent value="therapist" className="flex-1 min-h-0 mt-4">
             <ScrollArea className="h-full pr-4">
                 <div className="space-y-4">
-                    <JournalSection title="Personality" content={journal.personality} />
-                    <JournalSection title="Strengths" content={journal.strengths} />
-                    <JournalSection title="Struggles" content={journal.struggles} />
-                    <JournalSection title="Suggested Solutions" content={journal.suggestedSolutions} />
-                    <JournalSection title="Progress Summary" content={journal.progressSummary} isProgress={true} />
+                    <h2 className="text-lg font-semibold text-primary">Long-Term Context</h2>
+                    <JournalSection title="Personality" content={userContext?.personality} />
+                    <JournalSection title="Strengths" content={userContext?.strengths} />
+                    <JournalSection title="Core Struggles" content={userContext?.struggles} />
+                    
+                    <h2 className="text-lg font-semibold text-primary pt-4 mt-4 border-t">Current Chat</h2>
+                    <JournalSection title="Suggested Solutions" content={chatJournal?.suggestedSolutions} />
+                    <JournalSection title="Progress Summary" content={chatJournal?.progressSummary} isProgress={true} />
                 </div>
             </ScrollArea>
           </TabsContent>
@@ -75,13 +80,13 @@ export default function JournalDialog({
 
 interface JournalSectionProps {
     title: string;
-    content: string;
+    content?: string | null;
     isProgress?: boolean;
 }
 
 const JournalSection = ({ title, content, isProgress=false }: JournalSectionProps) => (
     <div>
         <h3 className={`font-semibold mb-1 ${isProgress ? 'text-primary' : ''}`}>{title}</h3>
-        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content}</p>
+        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content || "Not yet analyzed."}</p>
     </div>
 );
