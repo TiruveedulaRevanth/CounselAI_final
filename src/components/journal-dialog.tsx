@@ -10,17 +10,22 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "./ui/scroll-area";
-import { Textarea } from "./ui/textarea";
 import { BookText } from "lucide-react";
 import type { UserContext, ChatJournal } from "@/ai/schemas/journal";
+import { format } from "date-fns";
+
+export type UserJournalEntry = {
+    id: string;
+    date: number;
+    summary: string;
+}
 
 interface JournalDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   userContext: UserContext | null;
   chatJournal: ChatJournal | null;
-  userEntries: string;
-  onUserEntriesChange: (entries: string) => void;
+  userEntries: UserJournalEntry[];
 }
 
 export default function JournalDialog({
@@ -29,7 +34,6 @@ export default function JournalDialog({
   userContext,
   chatJournal,
   userEntries,
-  onUserEntriesChange,
 }: JournalDialogProps) {
     
   return (
@@ -41,7 +45,7 @@ export default function JournalDialog({
             My Journal
           </DialogTitle>
           <DialogDescription>
-            A space for your thoughts and the AI's analysis of your progress.
+            A space for the AI's analysis of your progress and a log of your summarized thoughts.
           </DialogDescription>
         </DialogHeader>
         <Tabs defaultValue="therapist" className="flex-1 flex flex-col min-h-0">
@@ -64,12 +68,22 @@ export default function JournalDialog({
             </ScrollArea>
           </TabsContent>
           <TabsContent value="patient" className="flex-1 min-h-0 mt-4">
-             <Textarea
-                placeholder="Write your thoughts here... Your entries are saved automatically."
-                className="h-full w-full resize-none text-base"
-                value={userEntries}
-                onChange={(e) => onUserEntriesChange(e.target.value)}
-            />
+             <ScrollArea className="h-full pr-4">
+                {userEntries.length > 0 ? (
+                    <div className="space-y-4">
+                        {userEntries.map(entry => (
+                            <div key={entry.id} className="border-l-2 border-primary pl-3">
+                                <p className="text-xs font-semibold text-muted-foreground">{format(new Date(entry.date), "MMMM d, yyyy - h:mm a")}</p>
+                                <p className="text-sm">{entry.summary}</p>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                        <p className="text-muted-foreground">Your summarized thoughts will appear here as you chat.</p>
+                    </div>
+                )}
+             </ScrollArea>
           </TabsContent>
         </Tabs>
       </DialogContent>
