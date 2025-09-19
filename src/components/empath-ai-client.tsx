@@ -6,9 +6,10 @@ import { summarizeChat } from "@/ai/flows/summarize-chat-flow";
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { suggestResource } from "@/ai/flows/suggest-resource-flow";
 import { sendSms } from "@/ai/flows/send-sms-flow";
+import { updateJournal } from "@/ai/flows/update-journal-flow";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Mic, Send, Settings, Trash2, MoreHorizontal, MessageSquarePlus, Square, Library, Sparkles, Siren, Edit, Archive, ArchiveX, FilePenLine } from "lucide-react";
+import { LogOut, Mic, Send, Settings, Trash2, MoreHorizontal, MessageSquarePlus, Square, Library, Sparkles, Siren, Edit, Archive, ArchiveX, FilePenLine, BookText } from "lucide-react";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import ChatMessage from "./chat-message";
 import SettingsDialog from "./settings-dialog";
@@ -59,6 +60,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import Image from 'next/image';
+import type { Journal } from "@/ai/schemas/journal";
+import JournalDialog from "./journal-dialog";
 
 declare global {
   interface Window {
@@ -135,16 +138,26 @@ interface EmpathAIClientProps {
     onSignOut: () => void;
 }
 
+const initialJournal: Journal = {
+    personality: "Not yet analyzed.",
+    strengths: "Not yet analyzed.",
+    struggles: "Not yet analyzed.",
+    suggestedSolutions: "Not yet analyzed.",
+    progressSummary: "No progress to report yet."
+};
 
 export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAIClientProps) {
   const { toast } = useToast();
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [journal, setJournal] = useState<Journal>(initialJournal);
+  const [userJournalEntries, setUserJournalEntries] = useState<string>("");
   
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [isJournalOpen, setIsJournalOpen] = useState(false);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [isDeleteProfileOpen, setIsDeleteProfileOpen] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -193,12 +206,18 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
   useEffect(() => {
     setCurrentProfile(activeProfile);
-    // When profile changes, load their chats
+    // When profile changes, load their chats and journal
     setIsDataLoading(true);
     try {
         const storedChats = localStorage.getItem(`counselai-chats-${activeProfile.id}`);
         const parsedChats = storedChats ? JSON.parse(storedChats) : [];
         setChats(parsedChats);
+
+        const storedJournal = localStorage.getItem(`counselai-journal-${activeProfile.id}`);
+        setJournal(storedJournal ? JSON.parse(storedJournal) : initialJournal);
+
+        const storedUserJournal = localStorage.getItem(`counselai-user-journal-${activeProfile.id}`);
+        setUserJournalEntries(storedUserJournal || "");
 
         // Load settings
         const storedStyle = localStorage.getItem(`counselai-therapy-style-${activeProfile.id}`);
@@ -235,17 +254,19 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
   }, [activeProfile, toast]);
   
-  // Persist chats and settings to local storage whenever they change for the current profile
+  // Persist data to local storage whenever they change for the current profile
   useEffect(() => {
     if (!isDataLoading) {
         localStorage.setItem(`counselai-chats-${currentProfile.id}`, JSON.stringify(chats));
+        localStorage.setItem(`counselai-journal-${currentProfile.id}`, JSON.stringify(journal));
+        localStorage.setItem(`counselai-user-journal-${currentProfile.id}`, userJournalEntries);
         localStorage.setItem(`counselai-therapy-style-${currentProfile.id}`, therapyStyle);
         localStorage.setItem(`counselai-persona-${currentProfile.id}`, activePersona.name);
         if (activePersona.name === 'Custom') {
             localStorage.setItem(`counselai-custom-persona-${currentProfile.id}`, JSON.stringify(customPersona));
         }
     }
-  }, [chats, therapyStyle, activePersona, customPersona, currentProfile.id, isDataLoading]);
+  }, [chats, journal, userJournalEntries, therapyStyle, activePersona, customPersona, currentProfile.id, isDataLoading]);
 
 
   const handleSignOut = () => {
@@ -282,6 +303,8 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     localStorage.removeItem(`counselai-therapy-style-${currentProfile.id}`);
     localStorage.removeItem(`counselai-persona-${currentProfile.id}`);
     localStorage.removeItem(`counselai-custom-persona-${currentProfile.id}`);
+    localStorage.removeItem(`counselai-journal-${currentProfile.id}`);
+    localStorage.removeItem(`counselai-user-journal-${currentProfile.id}`);
     
     toast({
         title: "Profile Deleted",
@@ -582,14 +605,14 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
     const updatedMessages = [...currentChat.messages, newUserMessage];
     const updatedChat = { ...currentChat, messages: updatedMessages };
-
-    const historyForAI = updatedMessages.map(({ role, content }) => ({ role, content }));
     
     // Optimistically update the local state for a responsive UI
     const updatedChatsWithUserMessage = currentChats.map(chat =>
         chat.id === currentChatId ? updatedChat : chat
     );
     setChats(updatedChatsWithUserMessage);
+
+    const historyForAI = updatedMessages.map(({ role, content }) => ({ role, content }));
 
     setUserInput("");
     setIsLoading(true);
@@ -612,7 +635,14 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             therapyStyle: therapyStyle,
             userInput: text,
             history: historyForAI.slice(0, -1), // Send history *before* the current message
+            journal: journal,
         });
+
+        // Trigger journal update in the background, but don't wait for it
+        if (historyForAI.length % 3 === 0) { // Update journal every 3 messages
+            updateJournal({ currentJournal: journal, history: historyForAI })
+                .then(newJournal => setJournal(newJournal));
+        }
 
         const [summarizeResult, resourceResult, aiResult] = await Promise.all([summarizePromise, resourcePromise, responsePromise]);
 
@@ -827,6 +857,13 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         />
         <EmergencyResourcesDialog isOpen={isEmergencyOpen} onOpenChange={setIsEmergencyOpen} />
         <ResourcesLibrary isOpen={isLibraryOpen} onOpenChange={setIsLibraryOpen} />
+        <JournalDialog 
+            isOpen={isJournalOpen}
+            onOpenChange={setIsJournalOpen}
+            journal={journal}
+            userEntries={userJournalEntries}
+            onUserEntriesChange={setUserJournalEntries}
+        />
 
       <Sidebar>
         <SidebarHeader>
@@ -873,6 +910,12 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                     <SidebarMenuButton onClick={() => setIsLibraryOpen(true)}>
                         <Library />
                         <span>Resources</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => setIsJournalOpen(true)}>
+                        <BookText />
+                        <span>Journal</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
