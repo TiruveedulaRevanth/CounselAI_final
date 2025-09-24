@@ -144,7 +144,7 @@ export default function JournalDialog({
                 <TabsTrigger value="current-chat-journal" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none -mb-px px-4 py-3">Current Chat Notes</TabsTrigger>
             </TabsList>
           </div>
-          <TabsContent value="long-term-context" className="flex-1 min-h-0">
+          <TabsContent value="long-term-context">
              <UserContextEditor 
                 isEditing={isEditingUserContext}
                 setIsEditing={setIsEditingUserContext}
@@ -152,8 +152,8 @@ export default function JournalDialog({
                 setUserContext={setUserContext}
              />
           </TabsContent>
-          <TabsContent value="current-chat-journal" className="flex-1 min-h-0">
-            <ScrollArea className="h-full">
+          <TabsContent value="current-chat-journal">
+            <ScrollArea>
                 <div className="space-y-6 p-6">
                     <ContextSection title="Suggested Solutions & Tools" content={chatJournal.suggestedSolutions} />
                     <ContextSection title="Progress in This Chat" content={chatJournal.progressSummary} />
@@ -482,3 +482,5 @@ const ContextSection = ({ title, content }: { title: string; content?: string })
     
     
   
+
+    
