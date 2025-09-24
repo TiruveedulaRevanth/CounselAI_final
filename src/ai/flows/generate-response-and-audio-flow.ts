@@ -37,9 +37,9 @@ const generateResponseAndAudioFlow = ai.defineFlow(
     inputSchema: GenerateResponseAndAudioInputSchema,
     outputSchema: GenerateResponseAndAudioOutputSchema,
   },
-  async ({ personalizationInput }) => {
+  async (input) => {
     // 1. Generate the text response and detect emotion
-    const textResult = await personalizeTherapyStyle(personalizationInput);
+    const textResult = await personalizeTherapyStyle(input.personalizationInput);
 
     if (textResult.needsHelp) {
       return {
