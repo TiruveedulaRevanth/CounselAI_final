@@ -528,6 +528,25 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     setIsSpeaking(false);
   };
 
+  const handleMicClick = () => {
+    if (!speechRecognition.current) {
+        toast({
+            variant: "destructive",
+            title: "Speech Recognition Not Supported",
+            description: "Your browser does not support speech recognition.",
+        });
+        return;
+    }
+
+    if (isListening) {
+      speechRecognition.current.stop();
+      setIsListening(false);
+    } else {
+      speechRecognition.current.start();
+      setIsListening(true);
+    }
+  };
+
 
   useEffect(() => {
     if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
@@ -1137,3 +1156,5 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
+
+    
