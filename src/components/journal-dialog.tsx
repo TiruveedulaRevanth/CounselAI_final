@@ -144,7 +144,7 @@ export default function JournalDialog({
                 <TabsTrigger value="current-chat-journal" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none -mb-px px-4 py-3">Current Chat Notes</TabsTrigger>
             </TabsList>
           </div>
-          <TabsContent value="long-term-context" className="flex-1 flex flex-col min-h-0">
+          <TabsContent value="long-term-context" className="flex-1 min-h-0">
              <UserContextEditor 
                 isEditing={isEditingUserContext}
                 setIsEditing={setIsEditingUserContext}
@@ -481,3 +481,4 @@ const ContextSection = ({ title, content }: { title: string; content?: string })
 
     
     
+  
