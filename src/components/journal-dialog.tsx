@@ -102,7 +102,7 @@ export default function JournalDialog({
                                 {sortedEntries.map(entry => (
                                     <div key={entry.id} className="p-4 border rounded-lg cursor-pointer hover:bg-muted/50" onClick={() => handleSelectEntry(entry)}>
                                         <p className="text-sm font-semibold text-muted-foreground">{format(new Date(entry.date), "MMMM d, yyyy - h:mm a")}</p>
-                                        <p className="mt-1 truncate">{(entry as any).summary || entry.shortTermContext?.concerns || 'No concerns noted'}</p>
+                                        <p className="mt-1 truncate">{entry.shortTermContext?.concerns || (entry as any).summary || 'No concerns noted'}</p>
                                     </div>
                                 ))}
                             </div>
@@ -131,9 +131,9 @@ export default function JournalDialog({
 
         <Tabs defaultValue="my-entries" className="flex-1 flex flex-col min-h-0">
           <TabsList>
+            <TabsTrigger value="my-entries">My Entries</TabsTrigger>
             <TabsTrigger value="long-term-context">Long-Term Context</TabsTrigger>
             <TabsTrigger value="current-chat-journal">Current Chat Notes</TabsTrigger>
-            <TabsTrigger value="my-entries">My Entries</TabsTrigger>
           </TabsList>
           <TabsContent value="long-term-context" className="flex-1 flex flex-col min-h-0 mt-4">
              <UserContextEditor 
@@ -458,5 +458,6 @@ const ContextSection = ({ title, content }: { title: string; content?: string })
     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content || 'Not yet analyzed.'}</p>
   </div>
 );
+
 
     
