@@ -48,13 +48,14 @@ const summarizeChatFlow = ai.defineFlow(
   async (input) => {
     try {
       const {output} = await prompt(input);
-      if (output) {
+      // Ensure there is a valid output, otherwise provide a fallback.
+      if (output?.title) {
         return output;
       }
     } catch (error) {
        console.error("Error in summarizeChatFlow:", error);
     }
-    // Return a default title if the AI fails to generate one.
+    // Return a default title if the AI fails to generate one or returns an empty response.
     return { title: "New Chat" };
   }
 );
