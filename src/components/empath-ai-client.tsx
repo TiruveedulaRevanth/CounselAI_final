@@ -676,11 +676,16 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         const [summarizeResult, resourceResult, journalSummaryResult, aiResult] = await Promise.all([summarizePromise, resourcePromise, journalSummaryPromise, responsePromise]);
 
         // Add user's query to their journal
-        if(journalSummaryResult?.summary) {
+        if (journalSummaryResult?.summary) {
             const newJournalEntry: UserJournalEntry = {
                 id: `user-entry-${Date.now()}`,
                 date: Date.now(),
-                summary: journalSummaryResult.summary,
+                shortTermContext: {
+                    concerns: journalSummaryResult.summary,
+                    mood: 'N/A',
+                    events: 'N/A',
+                    copingAttempts: 'N/A'
+                }
             };
             setUserJournalEntries(prev => [newJournalEntry, ...prev]);
         }
@@ -927,6 +932,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             setUserContext={setUserContext}
             chatJournal={activeChat?.journal || initialChatJournal}
             userJournalEntries={userJournalEntries}
+            setUserJournalEntries={setUserJournalEntries}
         />
 
       <Sidebar>

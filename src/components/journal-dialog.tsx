@@ -35,6 +35,7 @@ import { Separator } from './ui/separator';
 import { generateJournalReflection } from '@/ai/flows/journal-reflection-flow';
 import { useToast } from '@/hooks/use-toast';
 import * as z from 'zod';
+import { FormDescription } from './ui/form';
 
 interface JournalDialogProps {
   isOpen: boolean;
@@ -43,7 +44,7 @@ interface JournalDialogProps {
   setUserContext: (context: UserContext) => void;
   chatJournal: ChatJournal;
   userJournalEntries: UserJournalEntry[];
-  setUserJournalEntries: (entries: UserJournalEntry[]) => void;
+  setUserJournalEntries: (entries: (prev: UserJournalEntry[]) => UserJournalEntry[]) => void;
 }
 
 export default function JournalDialog({
@@ -101,7 +102,7 @@ export default function JournalDialog({
                                 {sortedEntries.map(entry => (
                                     <div key={entry.id} className="p-4 border rounded-lg cursor-pointer hover:bg-muted/50" onClick={() => handleSelectEntry(entry)}>
                                         <p className="text-sm font-semibold text-muted-foreground">{format(new Date(entry.date), "MMMM d, yyyy - h:mm a")}</p>
-                                        <p className="mt-1 truncate">{entry.shortTermContext.concerns}</p>
+                                        <p className="mt-1 truncate">{(entry as any).summary || entry.shortTermContext?.concerns || 'No concerns noted'}</p>
                                     </div>
                                 ))}
                             </div>
@@ -301,17 +302,19 @@ const EntryDetail = ({ entry, onBack }: { entry: UserJournalEntry; onBack: () =>
             </Button>
             <ScrollArea className="flex-1 pr-4 -mr-4">
                 <div className="space-y-6">
-                    <div>
-                        <h3 className="text-lg font-semibold">Your Entry</h3>
-                        <p className="text-sm text-muted-foreground">{format(new Date(entry.date), "MMMM d, yyyy - h:mm a")}</p>
-                        <Separator className="my-4" />
-                        <div className="space-y-4">
-                            <ContextSection title="Mood" content={entry.shortTermContext.mood} />
-                            <ContextSection title="Events/Triggers" content={entry.shortTermContext.events} />
-                            <ContextSection title="Concerns" content={entry.shortTermContext.concerns} />
-                            <ContextSection title="Coping Attempts" content={entry.shortTermContext.copingAttempts} />
+                    {entry.shortTermContext && (
+                        <div>
+                            <h3 className="text-lg font-semibold">Your Entry</h3>
+                            <p className="text-sm text-muted-foreground">{format(new Date(entry.date), "MMMM d, yyyy - h:mm a")}</p>
+                            <Separator className="my-4" />
+                            <div className="space-y-4">
+                                <ContextSection title="Mood" content={entry.shortTermContext.mood} />
+                                <ContextSection title="Events/Triggers" content={entry.shortTermContext.events} />
+                                <ContextSection title="Concerns" content={entry.shortTermContext.concerns} />
+                                <ContextSection title="Coping Attempts" content={entry.shortTermContext.copingAttempts} />
+                            </div>
                         </div>
-                    </div>
+                    )}
                     
                     {entry.reflection && (
                         <div>
@@ -455,3 +458,5 @@ const ContextSection = ({ title, content }: { title: string; content?: string })
     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content || 'Not yet analyzed.'}</p>
   </div>
 );
+
+    
