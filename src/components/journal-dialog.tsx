@@ -144,16 +144,18 @@ export default function JournalDialog({
                 <TabsTrigger value="current-chat-journal" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none -mb-px px-4 py-3">Current Chat Notes</TabsTrigger>
             </TabsList>
           </div>
-          <TabsContent value="long-term-context">
+          <TabsContent value="long-term-context" className="flex-1 min-h-0">
+            <ScrollArea className="h-full">
              <UserContextEditor 
                 isEditing={isEditingUserContext}
                 setIsEditing={setIsEditingUserContext}
                 userContext={userContext}
                 setUserContext={setUserContext}
              />
+            </ScrollArea>
           </TabsContent>
-          <TabsContent value="current-chat-journal">
-            <ScrollArea>
+          <TabsContent value="current-chat-journal" className="flex-1 min-h-0">
+            <ScrollArea className="h-full">
                 <div className="space-y-6 p-6">
                     <ContextSection title="Suggested Solutions & Tools" content={chatJournal.suggestedSolutions} />
                     <ContextSection title="Progress in This Chat" content={chatJournal.progressSummary} />
@@ -393,7 +395,7 @@ const UserContextEditor = ({
 
     if (!isEditing) {
         return (
-             <ScrollArea className="h-full relative">
+             <div className="h-full relative">
                  <div className="absolute top-4 right-6">
                     <Button onClick={() => setIsEditing(true)}>
                         <Edit className="mr-2 h-4 w-4" /> Edit Values
@@ -419,12 +421,12 @@ const UserContextEditor = ({
                     <ContextSection title="Values & Goals" content={userContext.values} />
                     <ContextSection title="Mood & Milestone History" content={userContext.moodHistory} />
                 </div>
-            </ScrollArea>
+            </div>
         )
     }
 
     return (
-        <ScrollArea className="h-full">
+        <div className="h-full">
             <div className="p-6">
                 <div className="space-y-6 mb-6">
                     <p className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-lg">This is the AI's long-term understanding of you, synthesized from your conversations. You can directly edit your **Values & Goals** below to help guide the AI. Other sections are updated automatically by the AI after your chats.</p>
@@ -467,7 +469,7 @@ const UserContextEditor = ({
                     </form>
                 </Form>
             </div>
-        </ScrollArea>
+        </div>
     )
 }
 
@@ -482,5 +484,7 @@ const ContextSection = ({ title, content }: { title: string; content?: string })
     
     
   
+
+    
 
     
