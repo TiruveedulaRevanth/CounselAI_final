@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -47,7 +48,15 @@ const promptBasedEmotionalSupportFlow = ai.defineFlow(
     outputSchema: PromptBasedEmotionalSupportOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      if (output) {
+        return output;
+      }
+      throw new Error("AI failed to generate a response.");
+    } catch (error) {
+      console.error("Error in promptBasedEmotionalSupportFlow:", error);
+      return { response: "I'm sorry, I'm having a little trouble understanding. Could you please rephrase that?" };
+    }
   }
 );
