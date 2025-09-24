@@ -232,7 +232,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         let parsedUserContext = storedUserContext ? JSON.parse(storedUserContext) : initialUserContext;
 
         // Migration logic for older data formats
-        if (parsedUserContext && (parsedUserContext as any).struggles) {
+        if (parsedUserContext && (parsedUserContext as any).personality) {
           parsedUserContext = initialUserContext; // Reset if old format is detected
           localStorage.setItem(`counselai-user-context-${activeProfile.id}`, JSON.stringify(parsedUserContext));
         }
