@@ -11,9 +11,13 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { SuggestResourceInputSchema } from '../schemas';
-import type { SuggestResourceInput } from '../schemas';
+import {
+  SuggestResourceInputSchema,
+  SuggestResourceOutputSchema,
+} from '../schemas';
+import type { SuggestResourceInput, SuggestResourceOutput } from '../schemas';
 
+export type { SuggestResourceInput, SuggestResourceOutput };
 
 const ResourceSchema = z.object({
   id: z.string(),
@@ -23,13 +27,6 @@ const ResourceSchema = z.object({
   type: z.enum(['article']),
   keywords: z.array(z.string()),
 });
-
-const SuggestResourceOutputSchema = z.object({
-  id: z.string().optional(),
-  title: z.string().optional(),
-});
-
-export type SuggestResourceOutput = z.infer<typeof SuggestResourceOutputSchema>;
 
 // This is a placeholder for a Firestore or other database call.
 const resourcesData = [
@@ -492,5 +489,3 @@ const suggestResourceFlow = ai.defineFlow(
     }
   }
 );
-
-    

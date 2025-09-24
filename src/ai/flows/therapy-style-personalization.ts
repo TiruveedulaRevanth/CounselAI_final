@@ -11,22 +11,16 @@
 
 import { ai } from '@/ai/genkit';
 import {
-  UserContextSchema,
-  ChatJournalSchema,
   PersonalizeTherapyStyleInputSchema,
   PersonalizeTherapyStyleOutputSchema,
   MessageSchema,
-} from '../schemas/journal-entry';
-
+} from '@/ai/schemas/journal-entry';
 import type {
   PersonalizeTherapyStyleInput,
   PersonalizeTherapyStyleOutput,
-} from '../schemas/journal-entry';
+} from '@/ai/schemas/journal-entry';
 
-export {
-  type PersonalizeTherapyStyleInput,
-  type PersonalizeTherapyStyleOutput,
-};
+export type { PersonalizeTherapyStyleInput, PersonalizeTherapyStyleOutput };
 
 export async function personalizeTherapyStyle(
   input: PersonalizeTherapyStyleInput

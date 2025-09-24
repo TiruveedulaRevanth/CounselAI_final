@@ -8,6 +8,12 @@ export const SuggestResourceInputSchema = z.object({
 });
 export type SuggestResourceInput = z.infer<typeof SuggestResourceInputSchema>;
 
+export const SuggestResourceOutputSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().optional(),
+});
+export type SuggestResourceOutput = z.infer<typeof SuggestResourceOutputSchema>;
+
 export const PromptBasedEmotionalSupportInputSchema = z.object({
   emotionalStateDescription: z
     .string()

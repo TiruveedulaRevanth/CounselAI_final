@@ -30,6 +30,7 @@ export const MessageSchema = z.object({
   role: z.enum(['user', 'assistant']),
   content: z.string(),
 });
+export type Message = z.infer<typeof MessageSchema>;
 
 export const PersonalizeTherapyStyleInputSchema = z.object({
   userName: z.string().optional().describe("The user's name."),

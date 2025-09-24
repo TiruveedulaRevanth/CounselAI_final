@@ -5,7 +5,7 @@
  *
  * - generateResponseAndAudio - A function that takes user input and context, and returns both the text response and audio data.
  * - GenerateResponseAndAudioInput - The input type for the function.
- * - GenerateResponseAnd-AudioOutput - The return type for the function.
+ * - GenerateResponseAndAudioOutput - The return type for the function.
  */
 
 import { personalizeTherapyStyle } from './therapy-style-personalization';
@@ -20,9 +20,9 @@ import type {
   GenerateResponseAndAudioOutput,
 } from '../schemas/journal-entry';
 
-export {
-  type GenerateResponseAndAudioInput,
-  type GenerateResponseAndAudioOutput,
+export type {
+  GenerateResponseAndAudioInput,
+  GenerateResponseAndAudioOutput,
 };
 
 export async function generateResponseAndAudio(

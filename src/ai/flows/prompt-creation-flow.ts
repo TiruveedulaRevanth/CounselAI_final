@@ -19,9 +19,9 @@ import type {
   PromptBasedEmotionalSupportOutput,
 } from '../schemas';
 
-export {
-  type PromptBasedEmotionalSupportInput,
-  type PromptBasedEmotionalSupportOutput,
+export type {
+  PromptBasedEmotionalSupportInput,
+  PromptBasedEmotionalSupportOutput,
 };
 
 export async function promptBasedEmotionalSupport(

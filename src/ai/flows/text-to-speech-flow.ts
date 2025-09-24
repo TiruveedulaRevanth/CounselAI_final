@@ -14,7 +14,7 @@ import wav from 'wav';
 import { TextToSpeechInputSchema, TextToSpeechOutputSchema } from '../schemas';
 import type { TextToSpeechInput, TextToSpeechOutput } from '../schemas';
 
-export { type TextToSpeechInput, type TextToSpeechOutput };
+export type { TextToSpeechInput, TextToSpeechOutput };
 
 export async function textToSpeech(
   input: TextToSpeechInput
