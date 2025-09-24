@@ -92,11 +92,13 @@ export default function JournalDialog({
         default:
             return (
                 <>
-                    <Button onClick={() => setView('new')} className="mb-4">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        New Journal Entry
-                    </Button>
-                    <ScrollArea className="h-full pr-4">
+                    <div className="px-6 pt-4">
+                        <Button onClick={() => setView('new')} className="w-full">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            New Journal Entry
+                        </Button>
+                    </div>
+                    <ScrollArea className="h-full px-6 pt-4">
                         {sortedEntries.length > 0 ? (
                             <div className="space-y-3">
                                 {sortedEntries.map(entry => (
@@ -107,7 +109,11 @@ export default function JournalDialog({
                                 ))}
                             </div>
                         ): (
-                            <p className="text-muted-foreground text-center py-8">Create your first journal entry to see it here.</p>
+                            <div className="h-full flex flex-col items-center justify-center text-center">
+                                <BookText className="w-16 h-16 text-muted-foreground/30 mb-4" />
+                                <h3 className="font-semibold text-lg">No Entries Yet</h3>
+                                <p className="text-muted-foreground text-sm">Create your first journal entry to get started.</p>
+                            </div>
                         )}
                     </ScrollArea>
                 </>
@@ -118,24 +124,27 @@ export default function JournalDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <BookText />
-            My Journal
-          </DialogTitle>
-          <DialogDescription>
-            A space to track your journey, review insights, and see your progress over time.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent hideCloseButton className="w-screen h-screen max-w-full rounded-none flex flex-col p-0 gap-0">
+        <header className="flex items-center justify-between p-4 border-b shrink-0 h-16">
+           <div className="flex items-center gap-3">
+            <BookText className="w-6 h-6"/>
+            <h2 className="text-xl font-bold tracking-tight">My Journal</h2>
+           </div>
+           <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+                <X className="h-5 w-5" />
+                <span className="sr-only">Close</span>
+           </Button>
+        </header>
 
         <Tabs defaultValue="my-entries" className="flex-1 flex flex-col min-h-0">
-          <TabsList>
-            <TabsTrigger value="my-entries">My Entries</TabsTrigger>
-            <TabsTrigger value="long-term-context">Long-Term Context</TabsTrigger>
-            <TabsTrigger value="current-chat-journal">Current Chat Notes</TabsTrigger>
-          </TabsList>
-          <TabsContent value="long-term-context" className="flex-1 flex flex-col min-h-0 mt-4">
+          <div className="px-6 border-b">
+            <TabsList className="bg-transparent p-0">
+                <TabsTrigger value="my-entries" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none -mb-px px-4 py-3">My Entries</TabsTrigger>
+                <TabsTrigger value="long-term-context" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none -mb-px px-4 py-3">Long-Term Context</TabsTrigger>
+                <TabsTrigger value="current-chat-journal" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none -mb-px px-4 py-3">Current Chat Notes</TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="long-term-context" className="flex-1 flex flex-col min-h-0">
              <UserContextEditor 
                 isEditing={isEditingUserContext}
                 setIsEditing={setIsEditingUserContext}
@@ -143,15 +152,15 @@ export default function JournalDialog({
                 setUserContext={setUserContext}
              />
           </TabsContent>
-          <TabsContent value="current-chat-journal" className="flex-1 min-h-0 mt-4">
-            <ScrollArea className="h-full pr-4">
-                <div className="space-y-4">
+          <TabsContent value="current-chat-journal" className="flex-1 min-h-0">
+            <ScrollArea className="h-full">
+                <div className="space-y-6 p-6">
                     <ContextSection title="Suggested Solutions & Tools" content={chatJournal.suggestedSolutions} />
                     <ContextSection title="Progress in This Chat" content={chatJournal.progressSummary} />
                 </div>
             </ScrollArea>
           </TabsContent>
-          <TabsContent value="my-entries" className="flex-1 min-h-0 mt-4 flex flex-col">
+          <TabsContent value="my-entries" className="flex-1 min-h-0 flex flex-col">
             {getActiveView()}
           </TabsContent>
         </Tabs>
@@ -224,71 +233,73 @@ const NewEntryForm = ({
 
   return (
     <div className="h-full flex flex-col">
-        <Button variant="ghost" onClick={onBack} className="self-start mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to entries
-        </Button>
-        <ScrollArea className="flex-1 pr-4 -mr-4">
-            <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                    control={form.control}
-                    name="mood"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Current Mood / Emotion</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="e.g., Anxious, frustrated, hopeful..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="events"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Recent Events or Triggers</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="What happened today that's on your mind?" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="concerns"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Current Concerns / Focus</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="What are you most worried or thinking about right now?" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="copingAttempts"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Coping Attempts & Reactions</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="What did you try to do to handle this? How did it go?" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <DialogFooter className="sticky bottom-0 bg-background py-4">
-                    <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Generating...' : 'Save & Get Reflection'}
-                    </Button>
-                </DialogFooter>
-            </form>
-            </Form>
+        <ScrollArea className="flex-1">
+             <div className="p-6">
+                <Button variant="ghost" onClick={onBack} className="mb-4 -ml-4">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to entries
+                </Button>
+                <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="mood"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Current Mood / Emotion</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="e.g., Anxious, frustrated, hopeful..." {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="events"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Recent Events or Triggers</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="What happened today that's on your mind?" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="concerns"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Current Concerns / Focus</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="What are you most worried or thinking about right now?" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="copingAttempts"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Coping Attempts & Reactions</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="What did you try to do to handle this? How did it go?" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <div className="sticky bottom-0 bg-background py-4 border-t -mx-6 px-6">
+                        <Button type="submit" disabled={isSubmitting} className="w-full">
+                            {isSubmitting ? 'Generating Reflection...' : 'Save & Get Reflection'}
+                        </Button>
+                    </div>
+                </form>
+                </Form>
+            </div>
         </ScrollArea>
     </div>
   );
@@ -297,42 +308,44 @@ const NewEntryForm = ({
 const EntryDetail = ({ entry, onBack }: { entry: UserJournalEntry; onBack: () => void }) => {
     return (
         <div className="h-full flex flex-col">
-            <Button variant="ghost" onClick={onBack} className="self-start mb-4">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to entries
-            </Button>
-            <ScrollArea className="flex-1 pr-4 -mr-4">
-                <div className="space-y-6">
-                    {entry.shortTermContext && (
-                        <div>
-                            <h3 className="text-lg font-semibold">Your Entry</h3>
-                            <p className="text-sm text-muted-foreground">{format(new Date(entry.date), "MMMM d, yyyy - h:mm a")}</p>
-                            <Separator className="my-4" />
-                            <div className="space-y-4">
-                                <ContextSection title="Mood" content={entry.shortTermContext.mood} />
-                                <ContextSection title="Events/Triggers" content={entry.shortTermContext.events} />
-                                <ContextSection title="Concerns" content={entry.shortTermContext.concerns} />
-                                <ContextSection title="Coping Attempts" content={entry.shortTermContext.copingAttempts} />
-                            </div>
-                        </div>
-                    )}
-                    
-                    {entry.reflection && (
-                        <div>
-                            <h3 className="text-lg font-semibold">AI Reflection</h3>
-                            <Separator className="my-4" />
-                            <div className="space-y-4">
-                                <ContextSection title="Summary" content={entry.reflection.summary} />
-                                <ContextSection title="Connection to Long-Term Patterns" content={entry.reflection.connection} />
-                                <ContextSection title="Insight" content={entry.reflection.insight} />
-                                <div>
-                                    <h4 className="font-semibold">Suggestions</h4>
-                                    <ul className="list-disc pl-5 mt-1 text-sm text-muted-foreground">
-                                        {entry.reflection.suggestions.map((s, i) => <li key={i}>{s}</li>)}
-                                    </ul>
+            <ScrollArea className="flex-1">
+                <div className="p-6">
+                    <Button variant="ghost" onClick={onBack} className="mb-4 -ml-4">
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to entries
+                    </Button>
+                    <div className="space-y-8">
+                        {entry.shortTermContext && (
+                            <div>
+                                <h3 className="text-lg font-semibold">Your Entry</h3>
+                                <p className="text-sm text-muted-foreground">{format(new Date(entry.date), "MMMM d, yyyy - h:mm a")}</p>
+                                <Separator className="my-4" />
+                                <div className="space-y-4">
+                                    <ContextSection title="Mood" content={entry.shortTermContext.mood} />
+                                    <ContextSection title="Events/Triggers" content={entry.shortTermContext.events} />
+                                    <ContextSection title="Concerns" content={entry.shortTermContext.concerns} />
+                                    <ContextSection title="Coping Attempts" content={entry.shortTermContext.copingAttempts} />
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                        
+                        {entry.reflection && (
+                             <div className="p-6 rounded-lg bg-muted/50">
+                                <h3 className="text-lg font-semibold">AI Reflection</h3>
+                                <Separator className="my-4" />
+                                <div className="space-y-4">
+                                    <ContextSection title="Summary" content={entry.reflection.summary} />
+                                    <ContextSection title="Connection to Long-Term Patterns" content={entry.reflection.connection} />
+                                    <ContextSection title="Insight" content={entry.reflection.insight} />
+                                    <div>
+                                        <h4 className="font-semibold">Suggestions</h4>
+                                        <ul className="list-disc pl-5 mt-1 text-sm text-muted-foreground space-y-1">
+                                            {entry.reflection.suggestions.map((s, i) => <li key={i}>{s}</li>)}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </ScrollArea>
         </div>
@@ -380,16 +393,18 @@ const UserContextEditor = ({
 
     if (!isEditing) {
         return (
-             <ScrollArea className="h-full pr-4">
-                 <Button onClick={() => setIsEditing(true)} className="absolute top-0 right-6">
-                    <Edit className="mr-2 h-4 w-4" /> Edit
-                </Button>
-                <div className="space-y-4">
+             <ScrollArea className="h-full relative">
+                 <div className="absolute top-4 right-6">
+                    <Button onClick={() => setIsEditing(true)}>
+                        <Edit className="mr-2 h-4 w-4" /> Edit Values
+                    </Button>
+                </div>
+                <div className="space-y-6 p-6">
                     <ContextSection title="Core Themes" content={userContext.coreThemes} />
                     <Accordion type="single" collapsible className="w-full">
                         <AccordionItem value="item-1">
                             <AccordionTrigger>Life Domains</AccordionTrigger>
-                            <AccordionContent className="pl-4 space-y-3">
+                            <AccordionContent className="pl-4 space-y-3 pt-4">
                                 <ContextSection title="Business" content={safeLifeDomains.business} />
                                 <ContextSection title="Relationships" content={safeLifeDomains.relationships} />
                                 <ContextSection title="Family" content={safeLifeDomains.family} />
@@ -409,45 +424,49 @@ const UserContextEditor = ({
     }
 
     return (
-        <ScrollArea className="h-full pr-4">
-             <div className="space-y-4 mb-6">
-                <p className="text-sm text-muted-foreground">This is the AI's long-term understanding of you. Only your Values & Goals are editable.</p>
-                <ContextSection title="Core Themes" content={userContext.coreThemes} />
-                 <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="item-1">
-                        <AccordionTrigger>Life Domains</AccordionTrigger>
-                        <AccordionContent className="pl-4 space-y-3">
-                             <ContextSection title="Business" content={safeLifeDomains.business} />
-                             <ContextSection title="Relationships" content={safeLifeDomains.relationships} />
-                             <ContextSection title="Family" content={safeLifeDomains.family} />
-                             <ContextSection title="Health" content={safeLifeDomains.health} />
-                             <ContextSection title="Finances" content={safeLifeDomains.finances} />
-                             <ContextSection title="Personal Growth" content={safeLifeDomains.personalGrowth} />
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
-                <ContextSection title="Personality Traits" content={userContext.personalityTraits} />
-                <ContextSection title="Recurring Problems / Stressors" content={userContext.recurringProblems} />
-                <ContextSection title="Mood & Milestone History" content={userContext.moodHistory} />
+        <ScrollArea className="h-full">
+            <div className="p-6">
+                <div className="space-y-6 mb-6">
+                    <p className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-lg">This is the AI's long-term understanding of you, synthesized from your conversations. You can directly edit your **Values & Goals** below to help guide the AI. Other sections are updated automatically by the AI after your chats.</p>
+                    <ContextSection title="Core Themes" content={userContext.coreThemes} />
+                    <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="item-1">
+                            <AccordionTrigger>Life Domains</AccordionTrigger>
+                            <AccordionContent className="pl-4 space-y-3 pt-4">
+                                <ContextSection title="Business" content={safeLifeDomains.business} />
+                                <ContextSection title="Relationships" content={safeLifeDomains.relationships} />
+                                <ContextSection title="Family" content={safeLifeDomains.family} />
+                                <ContextSection title="Health" content={safeLifeDomains.health} />
+                                <ContextSection title="Finances" content={safeLifeDomains.finances} />
+                                <ContextSection title="Personal Growth" content={safeLifeDomains.personalGrowth} />
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                    <ContextSection title="Personality Traits" content={userContext.personalityTraits} />
+                    <ContextSection title="Recurring Problems / Stressors" content={userContext.recurringProblems} />
+                    <ContextSection title="Mood & Milestone History" content={userContext.moodHistory} />
+                </div>
+                <Separator className="my-6"/>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSave)} className="space-y-4">
+                        <FormField control={form.control} name="values" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-base font-semibold">Values & Goals</FormLabel>
+                                <FormDescription>You can edit this section to guide the AI on what's most important to you.</FormDescription>
+                                <FormControl><Textarea {...field} rows={6} className="text-base" /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        
+                        <div className="sticky bottom-0 bg-background py-4 border-t -mx-6 px-6">
+                            <div className="flex justify-end gap-2">
+                                <Button type="button" variant="ghost" onClick={onCancel}><X className="mr-2 h-4 w-4"/>Cancel</Button>
+                                <Button type="submit"><Save className="mr-2 h-4 w-4"/>Save Changes</Button>
+                            </div>
+                        </div>
+                    </form>
+                </Form>
             </div>
-            <Separator className="my-6"/>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSave)} className="space-y-4">
-                    <FormField control={form.control} name="values" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-base font-semibold">Values & Goals</FormLabel>
-                             <FormDescription>You can edit this section to guide the AI on what's most important to you.</FormDescription>
-                            <FormControl><Textarea {...field} rows={5} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    
-                    <DialogFooter className="pt-4 sticky bottom-0 bg-background py-4">
-                        <Button type="button" variant="ghost" onClick={onCancel}><X className="mr-2 h-4 w-4"/>Cancel</Button>
-                        <Button type="submit"><Save className="mr-2 h-4 w-4"/>Save Changes</Button>
-                    </DialogFooter>
-                </form>
-            </Form>
         </ScrollArea>
     )
 }
@@ -460,4 +479,5 @@ const ContextSection = ({ title, content }: { title: string; content?: string })
 );
 
 
+    
     
