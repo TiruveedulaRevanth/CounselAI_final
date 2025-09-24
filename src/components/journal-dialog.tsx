@@ -13,6 +13,7 @@ import { ScrollArea } from "./ui/scroll-area";
 import { BookText } from "lucide-react";
 import type { UserContext, ChatJournal } from "@/ai/schemas/journal";
 import { format } from "date-fns";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 
 export type UserJournalEntry = {
     id: string;
@@ -45,26 +46,33 @@ export default function JournalDialog({
             My Journal
           </DialogTitle>
           <DialogDescription>
-            A space for the AI's analysis of your progress and a log of your summarized thoughts.
+            A space for AI analysis and a log of your summarized thoughts.
           </DialogDescription>
         </DialogHeader>
         <Tabs defaultValue="therapist" className="flex-1 flex flex-col min-h-0">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="therapist">AI Therapist's Notes</TabsTrigger>
+            <TabsTrigger value="therapist">AI Analysis</TabsTrigger>
             <TabsTrigger value="patient">My Entries</TabsTrigger>
           </TabsList>
-          <TabsContent value="therapist" className="flex-1 min-h-0 mt-4">
+          <TabsContent value="therapist" className="flex-1 min-h-0 mt-2">
             <ScrollArea className="h-full pr-4">
-                <div className="space-y-4">
-                    <h2 className="text-lg font-semibold text-primary">Long-Term Context</h2>
-                    <JournalSection title="Personality" content={userContext?.personality} />
-                    <JournalSection title="Strengths" content={userContext?.strengths} />
-                    <JournalSection title="Core Problems" content={userContext?.problems} />
-                    
-                    <h2 className="text-lg font-semibold text-primary pt-4 mt-4 border-t">Current Chat</h2>
-                    <JournalSection title="Suggested Solutions" content={chatJournal?.suggestedSolutions} />
-                    <JournalSection title="Progress Summary" content={chatJournal?.progressSummary} />
-                </div>
+                <Accordion type="multiple" defaultValue={['long-term', 'current-chat']} className="w-full">
+                    <AccordionItem value="long-term">
+                        <AccordionTrigger className="text-lg font-semibold text-primary">Long-Term Context</AccordionTrigger>
+                        <AccordionContent className="space-y-4 pt-2">
+                            <JournalSection title="Personality" content={userContext?.personality} />
+                            <JournalSection title="Strengths" content={userContext?.strengths} />
+                            <JournalSection title="Core Problems" content={userContext?.problems} />
+                        </AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="current-chat">
+                        <AccordionTrigger className="text-lg font-semibold text-primary">Current Chat</AccordionTrigger>
+                        <AccordionContent className="space-y-4 pt-2">
+                             <JournalSection title="Suggested Solutions" content={chatJournal?.suggestedSolutions} />
+                             <JournalSection title="Progress Summary" content={chatJournal?.progressSummary} />
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
             </ScrollArea>
           </TabsContent>
           <TabsContent value="patient" className="flex-1 min-h-0 mt-4">
@@ -99,7 +107,7 @@ interface JournalSectionProps {
 
 const JournalSection = ({ title, content }: JournalSectionProps) => (
     <div>
-        <h3 className='font-semibold mb-1'>{title}</h3>
+        <h3 className='font-semibold mb-1 text-base'>{title}</h3>
         <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content || "Not yet analyzed."}</p>
     </div>
 );
