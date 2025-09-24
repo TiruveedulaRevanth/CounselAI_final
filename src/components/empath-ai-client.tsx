@@ -1,7 +1,8 @@
 
 "use client";
 
-import { generateResponseAndAudio } from "@/ai/flows/generate-response-and-audio-flow";
+import { personalizeTherapyStyle } from "@/ai/flows/therapy-style-personalization";
+import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { summarizeChat } from "@/ai/flows/summarize-chat-flow";
 import { suggestResource } from "@/ai/flows/suggest-resource-flow";
 import { sendSms } from "@/ai/flows/send-sms-flow";
@@ -477,39 +478,56 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
           if (activeSpeakingMessageId === messageId) return;
       }
   
-      if (!audioData) {
-          toast({
-              variant: "destructive",
-              title: "Audio Error",
-              description: "No audio data is available for this message.",
-          });
-          return;
-      }
-  
-      setActiveSpeakingMessageId(messageId);
-      setIsAudioLoading(true);
-  
-      try {
+      if (audioData) {
+          // If audio data is already present, play it
+          setActiveSpeakingMessageId(messageId);
           if (!audioRef.current) {
               audioRef.current = new Audio();
           }
           audioRef.current.src = audioData;
-          audioRef.current.onended = () => {
+          audioRef.current.onended = () => setActiveSpeakingMessageId(null);
+          audioRef.current.play();
+      } else {
+          // Otherwise, fetch it
+          setIsAudioLoading(true);
+          setActiveSpeakingMessageId(messageId);
+          try {
+              const audioResult = await textToSpeech({ text });
+              if (audioResult?.audio) {
+                  if (!audioRef.current) {
+                      audioRef.current = new Audio();
+                  }
+                  audioRef.current.src = audioResult.audio;
+                  audioRef.current.onended = () => setActiveSpeakingMessageId(null);
+                  await audioRef.current.play();
+
+                  // Optionally, save the fetched audio to the message
+                  setChats(prevChats => prevChats.map(chat => {
+                      if (chat.id === activeChatId) {
+                          const newMessages = chat.messages.map(msg => 
+                              msg.id === messageId ? { ...msg, audio: audioResult.audio } : msg
+                          );
+                          return { ...chat, messages: newMessages };
+                      }
+                      return chat;
+                  }));
+
+              } else {
+                  throw new Error("No audio data was returned.");
+              }
+          } catch (error) {
+              console.error("Audio playback error:", error);
+              toast({
+                  variant: "destructive",
+                  title: "Audio Error",
+                  description: "Could not play audio.",
+              });
               setActiveSpeakingMessageId(null);
-          };
-          await audioRef.current.play();
-      } catch (error) {
-          console.error("Audio playback error:", error);
-          toast({
-              variant: "destructive",
-              title: "Speech Error",
-              description: "Could not play audio.",
-          });
-          setActiveSpeakingMessageId(null);
-      } finally {
-          setIsAudioLoading(false);
+          } finally {
+              setIsAudioLoading(false);
+          }
       }
-  }, [activeSpeakingMessageId, toast]);
+  }, [activeSpeakingMessageId, toast, activeChatId]);
 
   const handleStopSpeaking = () => {
     if (audioRef.current) {
@@ -664,19 +682,17 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
         const journalSummaryPromise = summarizeForJournal({ query: text });
 
-        const personalizationInput = {
+        const personalizationPromise = personalizeTherapyStyle({
             userName: userName,
             therapyStyle: therapyStyle,
             userInput: text,
             history: historyForAI.slice(0, -1),
             userContext: userContext,
             chatJournal: updatedChat.journal,
-        };
-        
-        const responseAndAudioPromise = generateResponseAndAudio({ personalizationInput });
+        });
 
 
-        const [summarizeResult, resourceResult, journalSummaryResult, aiResult] = await Promise.all([summarizePromise, resourcePromise, journalSummaryPromise, responseAndAudioPromise]);
+        const [summarizeResult, resourceResult, journalSummaryResult, aiResult] = await Promise.all([summarizePromise, resourcePromise, journalSummaryPromise, personalizationPromise]);
 
         // Add user's query to their journal
         if (journalSummaryResult?.summary) {
@@ -726,15 +742,25 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         }
         
         let finalAssistantMessage: Message | null = null;
-        if (aiResult.textResponse) {
+        if (aiResult.response) {
+            // Now that we have the text, generate the audio
+            const audioResult = await textToSpeech({ text: aiResult.response, emotion: aiResult.detectedEmotion });
+
             const newAssistantMessage: Message = {
                 id: Date.now().toString() + "-ai",
                 role: "assistant",
-                content: aiResult.textResponse,
+                content: aiResult.response,
                 resourceId: resourceResult?.id,
                 resourceTitle: resourceResult?.title,
-                audio: aiResult.audioResponse,
+                audio: audioResult.audio,
             };
+            if (!audioResult.audio) {
+              toast({
+                  variant: "destructive",
+                  title: "Audio Error",
+                  description: "No audio data is available for this message.",
+              });
+            }
             finalAssistantMessage = newAssistantMessage;
             finalChats = finalChats.map(chat =>
                 chat.id === currentChatId

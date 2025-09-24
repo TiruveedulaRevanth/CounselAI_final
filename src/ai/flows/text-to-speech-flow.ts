@@ -10,9 +10,16 @@
 
 import { ai } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
+import { z } from 'zod';
 import wav from 'wav';
-import { TextToSpeechInputSchema, TextToSpeechOutputSchema } from '../schemas';
-import type { TextToSpeechInput, TextToSpeechOutput } from '../schemas';
+import {
+  TextToSpeechInputSchema,
+  TextToSpeechOutputSchema,
+} from '../schemas';
+import type {
+  TextToSpeechInput,
+  TextToSpeechOutput,
+} from '../schemas';
 
 export type { TextToSpeechInput, TextToSpeechOutput };
 
