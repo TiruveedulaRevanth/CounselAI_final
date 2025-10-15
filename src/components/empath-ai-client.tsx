@@ -76,7 +76,7 @@ export type Message = {
   content: string;
   resourceId?: string;
   resourceTitle?: string;
-  audio?: string; // This will now be treated as transient session state.
+  audio?: string; // This is now transient session state.
 };
 
 export type Chat = {
@@ -292,7 +292,11 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   useEffect(() => {
     if (!isDataLoading) {
       try {
-        localStorage.setItem(`counselai-chats-${currentProfile.id}`, JSON.stringify(chats));
+        const chatsToPersist = chats.map(({ messages, ...rest }) => ({
+            ...rest,
+            messages: messages.map(({ audio, ...msg }) => msg), // Ensure audio is not persisted
+        }));
+        localStorage.setItem(`counselai-chats-${currentProfile.id}`, JSON.stringify(chatsToPersist));
         localStorage.setItem(`counselai-user-context-${currentProfile.id}`, JSON.stringify(userContext));
         localStorage.setItem(`counselai-user-journal-${currentProfile.id}`, JSON.stringify(userJournalEntries));
         localStorage.setItem(`counselai-therapy-style-${currentProfile.id}`, therapyStyle);
@@ -558,92 +562,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     setIsAudioLoading(false);
   };
 
-  const handleMicClick = () => {
-    if (!speechRecognition.current) {
-        toast({
-            variant: "destructive",
-            title: "Speech Recognition Not Supported",
-            description: "Your browser does not support speech recognition.",
-        });
-        return;
-    }
-
-    if (isListening) {
-      speechRecognition.current.stop();
-      setIsListening(false);
-    } else {
-      speechRecognition.current.start();
-      setIsListening(true);
-    }
-  };
-
-
-  useEffect(() => {
-    if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = selectedLanguage;
-
-      recognition.onresult = (event: any) => {
-        let interimTranscript = "";
-        let finalTranscript = "";
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
-          }
-        }
-        setUserInput(finalTranscript + interimTranscript);
-      };
-      
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-      
-      recognition.onerror = (event: any) => {
-        if (event.error === 'not-allowed') {
-            toast({
-              variant: "destructive",
-              title: "Microphone Access Denied",
-              description: "Please enable microphone access in your browser settings to use this feature.",
-            });
-        } else if (event.error === 'network') {
-            toast({
-              variant: "destructive",
-              title: "Speech Recognition Error",
-              description: "Network error. Please check your connection and try again.",
-            });
-        } else if (event.error !== 'no-speech') {
-            console.error("Speech recognition error", event.error);
-            toast({
-              variant: "destructive",
-              title: "Speech Recognition Error",
-              description: "An unexpected error occurred. Please try again.",
-            });
-        }
-        setIsListening(false);
-      };
-
-      speechRecognition.current = recognition;
-    }
-  }, [toast, selectedLanguage]);
-
-  useEffect(() => {
-    // This timeout ensures that the DOM has updated before we try to scroll.
-    setTimeout(() => {
-      if (scrollAreaRef.current) {
-        const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
-        if (viewport) {
-          viewport.scrollTop = viewport.scrollHeight;
-        }
-      }
-    }, 100);
-  }, [activeChat?.messages, isLoading]);
-
-  const handleSend = async (text: string) => {
+  const handleSend = useCallback(async (text: string) => {
     if (!text.trim() || isLoading) return;
 
     let currentChatId = activeChatId;
@@ -713,7 +632,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         });
 
 
-        const [summarizeResult, resourceResult, journalSummaryResult, aiResult] = await Promise.all([summarizePromise, resourcePromise, journalSummaryPromise, personalizationPromise]);
+        const [summarizeResult, resourceResult, journalSummaryResult, aiResult] = await Promise.all([summarizePromise, resourcePromise, journalSummaryResult, personalizationPromise]);
 
         // Add user's query to their journal
         if (journalSummaryResult?.summary) {
@@ -825,7 +744,97 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     } finally {
         setIsLoading(false);
     }
+  }, [activeChatId, chats, isLoading, isListening, userName, therapyStyle, userContext, toast, currentProfile, helplineUrls, speakText]);
+
+  const handleMicClick = () => {
+    if (!speechRecognition.current) {
+        toast({
+            variant: "destructive",
+            title: "Speech Recognition Not Supported",
+            description: "Your browser does not support speech recognition.",
+        });
+        return;
+    }
+
+    if (isListening) {
+      speechRecognition.current.stop();
+      setIsListening(false);
+    } else {
+      speechRecognition.current.start();
+      setIsListening(true);
+    }
   };
+
+
+  useEffect(() => {
+    if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false; // Important: process speech after a single utterance
+      recognition.interimResults = true;
+      recognition.lang = selectedLanguage;
+
+      recognition.onresult = (event: any) => {
+        let interimTranscript = "";
+        let finalTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        setUserInput(finalTranscript + interimTranscript);
+        
+        if (finalTranscript.trim()) {
+            handleSend(finalTranscript.trim());
+        }
+      };
+      
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+      
+      recognition.onerror = (event: any) => {
+        if (event.error === 'not-allowed') {
+            toast({
+              variant: "destructive",
+              title: "Microphone Access Denied",
+              description: "Please enable microphone access in your browser settings to use this feature.",
+            });
+        } else if (event.error === 'network') {
+            toast({
+              variant: "destructive",
+              title: "Speech Recognition Error",
+              description: "Network error. Please check your connection and try again.",
+            });
+        } else if (event.error !== 'no-speech') {
+            console.error("Speech recognition error", event.error);
+            toast({
+              variant: "destructive",
+              title: "Speech Recognition Error",
+              description: "An unexpected error occurred. Please try again.",
+            });
+        }
+        setIsListening(false);
+      };
+
+      speechRecognition.current = recognition;
+    }
+  }, [toast, selectedLanguage, handleSend]);
+
+  useEffect(() => {
+    // This timeout ensures that the DOM has updated before we try to scroll.
+    setTimeout(() => {
+      if (scrollAreaRef.current) {
+        const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
+        if (viewport) {
+          viewport.scrollTop = viewport.scrollHeight;
+        }
+      }
+    }, 100);
+  }, [activeChat?.messages, isLoading]);
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1185,3 +1194,5 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
+
+    
