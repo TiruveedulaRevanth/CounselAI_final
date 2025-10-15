@@ -525,6 +525,8 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       speechRecognition.current.stop();
       setIsListening(false);
     } else {
+      // Prevent starting if already in a listening-like state
+      if (isListening) return;
       speechRecognition.current.start();
       setIsListening(true);
     }
@@ -1204,3 +1206,5 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
+
+    
