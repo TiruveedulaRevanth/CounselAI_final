@@ -49,7 +49,7 @@ export type SendSmsOutput = z.infer<typeof SendSmsOutputSchema>;
 export const TextToSpeechInputSchema = z.object({
   text: z.string().describe('The text to be converted to speech.'),
   emotion: z
-    .enum(['Sadness', 'Anxiety', 'Anger', 'Joy', 'Neutral'])
+    .enum(["Sadness", "Anxiety", "Anger", "Joy", "Neutral", "Confusion", "Stress", "Happiness", "Shame/Guilt", "Hopelessness", "Tiredness/Exhaustion", "Love/Affection", "Mixed"])
     .optional()
     .describe('The primary emotion detected in the text.'),
 });
@@ -64,3 +64,5 @@ export const TextToSpeechOutputSchema = z.object({
     .optional(),
 });
 export type TextToSpeechOutput = z.infer<typeof TextToSpeechOutputSchema>;
+
+    

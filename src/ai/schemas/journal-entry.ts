@@ -115,8 +115,10 @@ export type PersonalizeTherapyStyleInput = z.infer<
 export const PersonalizeTherapyStyleOutputSchema = z.object({
   response: z.string().describe('The AI assistant’s response, personalized to the specified therapy style.'),
   needsHelp: z.boolean().optional().describe('A flag indicating if the user is in crisis and needs immediate help.'),
-  detectedEmotion: z.enum(["Sadness", "Anxiety", "Anger", "Joy", "Neutral"]).optional().describe("The primary emotion detected in the user's input."),
+  detectedEmotion: z.enum(["Sadness", "Anxiety", "Anger", "Joy", "Neutral", "Confusion", "Stress", "Happiness", "Shame/Guilt", "Hopelessness", "Tiredness/Exhaustion", "Love/Affection", "Mixed"]).optional().describe("The primary emotion detected in the user's input."),
 });
 export type PersonalizeTherapyStyleOutput = z.infer<
   typeof PersonalizeTherapyStyleOutputSchema
 >;
+
+    

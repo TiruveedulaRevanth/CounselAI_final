@@ -37,8 +37,8 @@ const textToSpeechFlow = ai.defineFlow(
   },
   async ({ text, emotion }) => {
     // Define the voice based on emotion
-    const voiceName =
-      emotion === 'Sadness' || emotion === 'Anxiety' ? 'Algenib' : 'Achernar';
+    const isSoothing = emotion === 'Sadness' || emotion === 'Anxiety' || emotion === 'Hopelessness' || emotion === 'Shame/Guilt' || emotion === 'Tiredness/Exhaustion';
+    const voiceName = isSoothing ? 'Algenib' : 'Achernar';
 
     try {
       const { media } = await ai.generate({
@@ -112,3 +112,5 @@ async function toWav(
     writer.end(pcmData);
   });
 }
+
+    
