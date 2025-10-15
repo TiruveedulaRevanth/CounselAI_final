@@ -660,7 +660,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         });
 
 
-        const [summarizeResult, resourceResult, journalSummaryResult, aiResult] = await Promise.all([summarizePromise, resourcePromise, journalSummaryResult, personalizationPromise]);
+        const [summarizeResult, resourceResult, journalSummaryResult, aiResult] = await Promise.all([summarizePromise, resourcePromise, journalSummaryPromise, personalizationPromise]);
 
         // Add user's query to their journal
         if (journalSummaryResult?.summary) {
@@ -1204,5 +1204,3 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
-
-    
