@@ -29,11 +29,18 @@ export default function ChatMessage({
 }: ChatMessageProps) {
   const isAssistant = message.role === "assistant";
 
-  const handleSpeakClick = () => {
+  const handleSpeakClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // prevent the bubble click from triggering
     if (isSpeaking) {
       onStopSpeaking?.();
     } else {
       onSpeak?.(message.content);
+    }
+  }
+
+  const handleBubbleClick = () => {
+    if (isAssistant && isSpeaking) {
+      onStopSpeaking?.();
     }
   }
 
@@ -54,10 +61,14 @@ export default function ChatMessage({
       )}
       <div className={cn("flex flex-col", isAssistant ? "items-start" : "items-end")}>
         <p className="font-bold mb-1 text-sm text-foreground/80">{isAssistant ? "CounselAI" : "You"}</p>
-        <div className={cn(
-            "p-3 rounded-lg text-base leading-relaxed whitespace-pre-wrap max-w-md md:max-w-lg lg:max-w-xl shadow",
-            isAssistant ? "bg-assistant-bubble" : "bg-user-bubble text-primary-foreground"
-        )}>
+        <div 
+            className={cn(
+                "p-3 rounded-lg text-base leading-relaxed whitespace-pre-wrap max-w-md md:max-w-lg lg:max-w-xl shadow",
+                isAssistant ? "bg-assistant-bubble" : "bg-user-bubble text-primary-foreground",
+                isAssistant && isSpeaking && "cursor-pointer hover:bg-assistant-bubble/80 transition-colors"
+            )}
+            onClick={handleBubbleClick}
+        >
             {message.content}
         </div>
          {isAssistant && onSpeak && (
