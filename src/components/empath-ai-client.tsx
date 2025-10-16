@@ -642,7 +642,8 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     
     try {
         const startTime = Date.now();
-        // Get text response first
+        
+        // Get text and audio response
         const personalizationPromise = personalizeTherapyStyle({
             userName: userName,
             therapyStyle: therapyStyle,
@@ -677,7 +678,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             throw new Error("Received an empty response from the AI.");
         }
         
-        // Generate audio while other promises run in the background
         const audioPromise = textToSpeech({ text: aiResult.response, emotion: aiResult.detectedEmotion });
 
         const [audioResult] = await Promise.all([audioPromise]);
@@ -685,8 +685,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         const endTime = Date.now();
         const duration = ((endTime - startTime) / 1000).toFixed(1);
         toast({
-            title: "Response Generated",
-            description: `Thought for ${duration} seconds.`,
+            title: `Thought for ${duration} seconds.`,
         });
 
         const newAssistantMessage: Message = {
@@ -718,6 +717,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         // --- Run background tasks after responding to user ---
 
         const backgroundTasks = async () => {
+          try {
             const summarizePromise = isFirstMessage 
                 ? summarizeChat({ message: text })
                 : Promise.resolve(null);
@@ -784,6 +784,10 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                     : chat
                 ));
             }
+          } catch(error) {
+              console.error("Error in background tasks:", error);
+              // We don't need to show a user-facing error for background tasks
+          }
         };
 
         // Fire and forget
@@ -1236,3 +1240,5 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
+
+    
