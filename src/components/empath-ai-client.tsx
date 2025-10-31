@@ -212,6 +212,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const finalTranscriptRef = useRef<string>("");
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const userName = currentProfile.name;
   
@@ -681,62 +682,71 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             }
         });
         
+        // --- Fire-and-forget background tasks ---
         const backgroundTasks = async () => {
-          try {
-            const summarizePromise = isFirstMessage 
-                ? summarizeChat({ message: text })
-                : Promise.resolve(null);
+            try {
+                const tasks = [];
+                // Task 1: Summarize chat title for the first message
+                if (isFirstMessage) {
+                    tasks.push(
+                        summarizeChat({ message: text }).then(summarizeResult => {
+                            if (summarizeResult?.title) {
+                                setChats(prevChats => prevChats.map(chat =>
+                                    chat.id === currentChatId ? { ...chat, name: summarizeResult.title } : chat
+                                ));
+                            }
+                        })
+                    );
+                }
+
+                // Task 2: Suggest a resource
+                tasks.push(
+                    suggestResource({ query: text }).then(resourceResult => {
+                        if (resourceResult?.id) {
+                            setChats(prevChats => prevChats.map(chat => {
+                                if (chat.id === currentChatId) {
+                                    const updatedMsgs = chat.messages.map(msg =>
+                                        msg.id === newAssistantMessage.id
+                                            ? { ...msg, resourceId: resourceResult.id, resourceTitle: resourceResult.title }
+                                            : msg
+                                    );
+                                    return { ...chat, messages: updatedMsgs };
+                                }
+                                return chat;
+                            }));
+                        }
+                    })
+                );
+
+                // Task 3: Summarize for user journal
+                tasks.push(
+                  summarizeForJournal({ query: text }).then(journalSummaryResult => {
+                    if (journalSummaryResult?.summary) {
+                        const newJournalEntry: UserJournalEntry = {
+                            id: `user-entry-${Date.now()}`,
+                            date: Date.now(),
+                            shortTermContext: {
+                                concerns: journalSummaryResult.summary,
+                                mood: 'N/A',
+                                events: 'N/A',
+                                copingAttempts: 'N/A'
+                            }
+                        };
+                        setUserJournalEntries(prev => [newJournalEntry, ...prev]);
+                    }
+                  })
+                );
                 
-            const resourcePromise = suggestResource({ query: text });
-            const journalSummaryPromise = summarizeForJournal({ query: text });
+                await Promise.all(tasks);
 
-            const [summarizeResult, resourceResult, journalSummaryResult] = await Promise.all([
-                summarizePromise,
-                resourcePromise,
-                journalSummaryPromise,
-            ]);
-
-            if (summarizeResult?.title) {
-                setChats(prevChats => prevChats.map(chat =>
-                    chat.id === currentChatId ? { ...chat, name: summarizeResult.title } : chat
-                ));
+            } catch (error) {
+                console.error("Error in non-critical background tasks:", error);
             }
-
-            if (resourceResult?.id) {
-                 setChats(prevChats => prevChats.map(chat => {
-                    if (chat.id === currentChatId) {
-                        const updatedMsgs = chat.messages.map(msg => 
-                            msg.id === newAssistantMessage.id 
-                            ? { ...msg, resourceId: resourceResult.id, resourceTitle: resourceResult.title }
-                            : msg
-                        );
-                        return { ...chat, messages: updatedMsgs };
-                    }
-                    return chat;
-                }));
-            }
-            if (journalSummaryResult?.summary) {
-                const newJournalEntry: UserJournalEntry = {
-                    id: `user-entry-${Date.now()}`,
-                    date: Date.now(),
-                    shortTermContext: {
-                        concerns: journalSummaryResult.summary,
-                        mood: 'N/A',
-                        events: 'N/A',
-                        copingAttempts: 'N/A'
-                    }
-                };
-                setUserJournalEntries(prev => [newJournalEntry, ...prev]);
-            }
-          } catch (error) {
-              console.error("Error in background tasks:", error);
-          }
         };
         
-        // Don't await background tasks
         backgroundTasks();
 
-        // Run journal update as a separate, non-blocking task
+        // Separate, non-awaited task for the long-running journal update
         (async () => {
             try {
                 const fullHistory = [...historyForAI, {role: 'assistant', content: newAssistantMessage.content}];
@@ -755,7 +765,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                     ));
                 }
             } catch (error) {
-                 console.error("Error updating journal in background:", error);
+                 console.error("Error updating main journal in background:", error);
             }
         })();
 
@@ -791,8 +801,21 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       recognition.stop();
     } else {
       finalTranscriptRef.current = "";
-      setUserInput("");
-      recognition.start(options?.duration);
+      setUserInput(""); // Clear interim text
+      recognition.start();
+
+      // Clear any existing timeout
+      if (silenceTimeoutRef.current) {
+        clearTimeout(silenceTimeoutRef.current);
+      }
+      
+      // Set a new timeout to stop recognition after a period of silence or a max duration
+      const timeoutDuration = options?.duration || 2000;
+      silenceTimeoutRef.current = setTimeout(() => {
+        if (isListening) {
+          recognition.stop();
+        }
+      }, timeoutDuration);
     }
   }, [isListening, toast]);
   
@@ -867,29 +890,16 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       recognition.interimResults = true;
       recognition.lang = selectedLanguage;
 
-      let sessionTimeout: NodeJS.Timeout | null = null;
-      let silenceTimeout: NodeJS.Timeout | null = null;
-
-      // Override start to handle session timeout
-      recognition.start = (duration?: number) => {
-        if(isListening) return;
-        SpeechRecognition.prototype.start.call(recognition);
-        if (duration) {
-            sessionTimeout = setTimeout(() => {
-                if (isListening) {
-                    SpeechRecognition.prototype.stop.call(recognition);
-                }
-            }, duration);
-        }
-      };
 
       recognition.onstart = () => {
         setIsListening(true);
       };
 
       recognition.onresult = (event: any) => {
-        // Clear silence timeout on new result
-        if (silenceTimeout) clearTimeout(silenceTimeout);
+        // Clear the silence timeout on any new result
+        if (silenceTimeoutRef.current) {
+            clearTimeout(silenceTimeoutRef.current);
+        }
 
         let interimTranscript = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -903,15 +913,17 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         
         setUserInput(finalTranscriptRef.current + interimTranscript);
         
-        // Start a timeout to stop if there's a 2-second pause
-        silenceTimeout = setTimeout(() => {
+        // Set a new timeout to stop if there's a 2-second pause
+        const duration = isListening ? 2000 : 15000;
+        silenceTimeoutRef.current = setTimeout(() => {
             recognition.stop();
-        }, 2000);
+        }, duration);
       };
       
       recognition.onend = () => {
-        if(silenceTimeout) clearTimeout(silenceTimeout);
-        if(sessionTimeout) clearTimeout(sessionTimeout);
+        if (silenceTimeoutRef.current) {
+            clearTimeout(silenceTimeoutRef.current);
+        }
         
         const finalTranscript = finalTranscriptRef.current.trim();
         if (finalTranscript) {
@@ -951,9 +963,14 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     }
 
     return () => {
-        speechRecognition.current?.abort();
+        if (speechRecognition.current) {
+          speechRecognition.current.abort();
+        }
+        if (silenceTimeoutRef.current) {
+            clearTimeout(silenceTimeoutRef.current);
+        }
     }
-  }, [toast, selectedLanguage, handleSend]);
+  }, [toast, selectedLanguage, handleSend, isListening]);
 
 
   useEffect(() => {
