@@ -515,7 +515,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     ].filter(group => group.chats.length > 0);
   }, [chats]);
   
-  const handleMicClick = useCallback(() => {
+  const handleMicClick = useCallback((options?: { longListen: boolean }) => {
     if (!speechRecognition.current) {
         toast({
             variant: "destructive",
@@ -527,12 +527,11 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
     if (isListening) {
       speechRecognition.current.stop();
-      // onend will handle setting isListening to false
     } else {
-      // Prevent starting if already in a listening-like state
       if (isListening) return;
       finalTranscriptRef.current = "";
       setUserInput("");
+      speechRecognition.current.longListen = options?.longListen || false;
       speechRecognition.current.start();
       setIsListening(true);
     }
@@ -545,8 +544,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     }
     setActiveSpeakingMessageId(null);
     setIsAudioLoading(false);
-    // Automatically turn on the mic after interrupting
-    handleMicClick();
+    handleMicClick({ longListen: true });
   }, [handleMicClick]);
 
   const speakText = useCallback(async (text: string, messageId: string, emotion?: "Sadness" | "Anxiety" | "Anger" | "Joy" | "Neutral" | "Confusion" | "Stress" | "Happiness" | "Shame/Guilt" | "Hopelessness" | "Tiredness/Exhaustion" | "Love/Affection" | "Mixed") => {
@@ -556,7 +554,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       }
   
       if (sessionAudio[messageId]) {
-          // If audio data is already in session state, play it
           setActiveSpeakingMessageId(messageId);
           if (!audioRef.current) {
               audioRef.current = new Audio();
@@ -565,7 +562,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
           audioRef.current.onended = () => setActiveSpeakingMessageId(null);
           audioRef.current.play();
       } else {
-          // Otherwise, fetch it
           setIsAudioLoading(true);
           setActiveSpeakingMessageId(messageId);
           try {
@@ -578,7 +574,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                   audioRef.current.src = audioResult.audio;
                   audioRef.current.onended = () => setActiveSpeakingMessageId(null);
                   await audioRef.current.play();
-
               } else {
                   throw new Error("No audio data was returned.");
               }
@@ -603,7 +598,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     let currentChats = [...chats];
     let currentChat = currentChats.find(c => c.id === currentChatId);
 
-    // If no active chat, create one first
     if (!currentChatId || !currentChat) {
         const newChat: Chat = {
             id: `chat-${Date.now()}`,
@@ -630,7 +624,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     const updatedMessages = [...currentChat.messages, newUserMessage];
     const updatedChat = { ...currentChat, messages: updatedMessages };
     
-    // Optimistically update the local state for a responsive UI
     const updatedChatsWithUserMessage = currentChats.map(chat =>
         chat.id === currentChatId ? updatedChat : chat
     );
@@ -648,20 +641,27 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     try {
         const startTime = Date.now();
         
-        // Get text and audio response in parallel
-        const personalizationPromise = personalizeTherapyStyle({
+        const [aiResult, audioResult] = await Promise.all([
+          personalizeTherapyStyle({
             userName: userName,
             therapyStyle: therapyStyle,
             userInput: text,
             history: historyForAI.slice(0, -1),
             userContext: userContext,
             chatJournal: updatedChat.journal,
-        });
+          }),
+          textToSpeech({ text: " " }) // Placeholder to warm up TTS
+        ]);
+        
+        const textResponse = aiResult.response;
+        
+        if (!textResponse) {
+          throw new Error("Received an empty response from the AI.");
+        }
 
-        const [aiResult] = await Promise.all([personalizationPromise]);
+        const finalAudioResult = await textToSpeech({ text: textResponse, emotion: aiResult.detectedEmotion });
 
         if (aiResult.needsHelp) {
-             // Send SMS to emergency contact
             if (currentProfile.emergencyContactPhone) {
                 await sendSms({
                     userName: currentProfile.name,
@@ -673,20 +673,11 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                     duration: 5000,
                 });
             }
-            // Redirect to helpline
             const regionUrl = helplineUrls[currentProfile.region] || helplineUrls.DEFAULT;
             window.location.href = regionUrl;
-            return; // Stop further processing
+            return;
         }
 
-        if (!aiResult.response) {
-            throw new Error("Received an empty response from the AI.");
-        }
-        
-        const audioPromise = textToSpeech({ text: aiResult.response, emotion: aiResult.detectedEmotion });
-
-        const [audioResult] = await Promise.all([audioPromise]);
-        
         const endTime = Date.now();
         const duration = ((endTime - startTime) / 1000).toFixed(1);
         toast({
@@ -696,8 +687,19 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         const newAssistantMessage: Message = {
             id: Date.now().toString() + "-ai",
             role: "assistant",
-            content: aiResult.response,
+            content: textResponse,
         };
+
+        if (finalAudioResult?.audio) {
+            setSessionAudio(prev => ({ ...prev, [newAssistantMessage.id]: finalAudioResult.audio! }));
+            if (!audioRef.current) {
+                audioRef.current = new Audio();
+            }
+            audioRef.current.src = finalAudioResult.audio;
+            audioRef.current.onended = () => setActiveSpeakingMessageId(null);
+            audioRef.current.play();
+            setActiveSpeakingMessageId(newAssistantMessage.id);
+        }
 
         let finalChats = updatedChatsWithUserMessage.map(chat =>
             chat.id === currentChatId
@@ -705,22 +707,8 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                 : chat
         );
         setChats(finalChats);
-        
-        if (audioResult?.audio) {
-            setSessionAudio(prev => ({ ...prev, [newAssistantMessage.id]: audioResult.audio! }));
-            if (!audioRef.current) {
-                audioRef.current = new Audio();
-            }
-            audioRef.current.src = audioResult.audio;
-            audioRef.current.onended = () => setActiveSpeakingMessageId(null);
-            audioRef.current.play();
-            setActiveSpeakingMessageId(newAssistantMessage.id);
-        }
-
         setIsLoading(false);
         
-        // --- Run background tasks after responding to user ---
-
         const backgroundTasks = async () => {
           try {
             const summarizePromise = isFirstMessage 
@@ -736,14 +724,12 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                 journalSummaryPromise,
             ]);
 
-            // Update chat name if it was the first message
             if (summarizeResult?.title) {
                 setChats(prevChats => prevChats.map(chat =>
                     chat.id === currentChatId ? { ...chat, name: summarizeResult.title } : chat
                 ));
             }
 
-            // Add resource to the message if found
             if (resourceResult?.id) {
                  setChats(prevChats => prevChats.map(chat => {
                     if (chat.id === currentChatId) {
@@ -758,7 +744,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                 }));
             }
 
-            // Add user's query to their journal
             if (journalSummaryResult?.summary) {
                 const newJournalEntry: UserJournalEntry = {
                     id: `user-entry-${Date.now()}`,
@@ -774,14 +759,11 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             }
           } catch(error) {
               console.error("Error in background tasks:", error);
-              // We don't need to show a user-facing error for background tasks
           }
         };
 
-        // Fire and forget background tasks.
         backgroundTasks();
 
-        // Fire and forget journal update separately as it's the longest task.
         (async () => {
             try {
                 const fullHistory = [...historyForAI, {role: 'assistant', content: newAssistantMessage.content}];
@@ -812,7 +794,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             title: "AI Error",
             description: "Sorry, I encountered an error. Please try again.",
         });
-        // Revert the optimistic update on error
          setChats(currentChats.map(chat =>
             chat.id === currentChatId
                 ? { ...chat, messages: currentChat.messages }
@@ -820,7 +801,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
          ));
          setIsLoading(false);
     }
-  }, [activeChatId, chats, isLoading, isListening, userName, therapyStyle, userContext, toast, currentProfile, helplineUrls]);
+  }, [activeChatId, chats, isLoading, isListening, userName, therapyStyle, userContext, toast, currentProfile, helplineUrls, handleStopSpeaking]);
 
   // Effect to set up speech recognition
   useEffect(() => {
@@ -832,15 +813,15 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       recognition.interimResults = true;
       recognition.lang = selectedLanguage;
 
-      const stopListening = () => {
+      // Add a custom property to the recognition object
+      (recognition as any).longListen = false;
+
+      const stopListeningAndSend = () => {
         setIsListening(false);
         speechRecognition.current?.stop();
-        if (listeningTimeoutRef.current) {
-          clearTimeout(listeningTimeoutRef.current);
-        }
-      };
+        if (listeningTimeoutRef.current) clearTimeout(listeningTimeoutRef.current);
+        if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
 
-      const handleSendTranscript = () => {
         const transcript = finalTranscriptRef.current.trim();
         if (transcript) {
           handleSend(transcript);
@@ -851,16 +832,13 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
       recognition.onstart = () => {
         setIsListening(true);
-        // Set a hard timeout for the listening session
+        const listenDuration = (recognition as any).longListen ? 15000 : 45000;
+        
         if (listeningTimeoutRef.current) clearTimeout(listeningTimeoutRef.current);
-        listeningTimeoutRef.current = setTimeout(() => {
-           stopListening();
-           handleSendTranscript();
-        }, 45000); // 45-second overall limit
+        listeningTimeoutRef.current = setTimeout(stopListeningAndSend, listenDuration);
       };
 
       recognition.onresult = (event: any) => {
-        // Clear the end-of-speech timer
         if (speechTimeoutRef.current) {
           clearTimeout(speechTimeoutRef.current);
         }
@@ -878,22 +856,18 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         
         finalTranscriptRef.current += currentFinalTranscript;
         setUserInput(finalTranscriptRef.current + interimTranscript);
-
-        // Set a timer to stop if the user pauses for 2 seconds
-        speechTimeoutRef.current = setTimeout(() => {
-          stopListening();
-          handleSendTranscript();
-        }, 2000);
+        
+        const isLongListen = (recognition as any).longListen;
+        if (!isLongListen) {
+            speechTimeoutRef.current = setTimeout(stopListeningAndSend, 2000);
+        }
       };
       
       recognition.onend = () => {
-        if (isListening) {
-          // If it ends unexpectedly, finalize the speech
-          handleSendTranscript();
+        if (isListening) { // If it ends but we think it should be listening
+          stopListeningAndSend();
         }
         setIsListening(false);
-        if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
-        if (listeningTimeoutRef.current) clearTimeout(listeningTimeoutRef.current);
       };
       
       recognition.onerror = (event: any) => {
@@ -923,7 +897,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       speechRecognition.current = recognition;
     }
 
-    // Cleanup function
     return () => {
         speechRecognition.current?.abort();
         if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
@@ -1275,7 +1248,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                             <Button 
                                 variant="ghost"
                                 size="icon" 
-                                onClick={handleMicClick}
+                                onClick={() => handleMicClick()}
                                 className={isListening ? "text-red-500" : ""}
                             >
                                 <Mic className="h-5 w-5"/>
