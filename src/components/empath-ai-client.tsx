@@ -58,8 +58,8 @@ import { User } from "lucide-react";
 import type { Profile } from "./auth-page";
 import EditProfileDialog from "./edit-profile-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "./ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 import JournalDialog from "./journal-dialog";
 import type { UserContext, ChatJournal, UserJournalEntry } from "@/ai/schemas/journal-entry";
 
@@ -641,40 +641,82 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     try {
         const startTime = Date.now();
         
-        const [aiResult, audioResult] = await Promise.all([
-          personalizeTherapyStyle({
+        const aiResult = await personalizeTherapyStyle({
             userName: userName,
             therapyStyle: therapyStyle,
             userInput: text,
             history: historyForAI.slice(0, -1),
             userContext: userContext,
             chatJournal: updatedChat.journal,
-          }),
-          textToSpeech({ text: " " }) // Placeholder to warm up TTS
-        ]);
-        
+        });
+
         const textResponse = aiResult.response;
         
         if (!textResponse) {
           throw new Error("Received an empty response from the AI.");
         }
 
-        const finalAudioResult = await textToSpeech({ text: textResponse, emotion: aiResult.detectedEmotion });
+        const audioResult = await textToSpeech({ text: textResponse, emotion: aiResult.detectedEmotion });
 
         if (aiResult.needsHelp) {
+            let crisisMessageSent = false;
+            // In-app notification for emergency contact
+            if (currentProfile.emergencyContactPhone) {
+                const allProfiles: Profile[] = JSON.parse(localStorage.getItem("counselai-profiles") || "[]");
+                const contactProfile = allProfiles.find(p => p.phone === currentProfile.emergencyContactPhone);
+
+                if (contactProfile) {
+                    const crisisChatId = `crisis-${Date.now()}`;
+                    const crisisMessage: Message = {
+                        id: `crisis-msg-${Date.now()}`,
+                        role: 'assistant',
+                        content: `This is an urgent automated alert from CounselAI. Your contact, ${currentProfile.name}, may be in a mental health crisis and has expressed thoughts related to self-harm. Please reach out to them immediately to check on them. Their well-being is the top priority.`
+                    };
+                    const newCrisisChat: Chat = {
+                        id: crisisChatId,
+                        name: `Urgent: Check on ${currentProfile.name}`,
+                        messages: [crisisMessage],
+                        createdAt: Date.now(),
+                        journal: initialChatJournal
+                    };
+
+                    const contactChats: Chat[] = JSON.parse(localStorage.getItem(`counselai-chats-${contactProfile.id}`) || "[]");
+                    localStorage.setItem(`counselai-chats-${contactProfile.id}`, JSON.stringify([newCrisisChat, ...contactChats]));
+                    crisisMessageSent = true;
+                }
+            }
+
+            // Fallback to SMS
             if (currentProfile.emergencyContactPhone) {
                 await sendSms({
                     userName: currentProfile.name,
                     emergencyContactPhone: currentProfile.emergencyContactPhone
                 });
                 toast({
-                    title: "Emergency Contact Alerted",
-                    description: "A message has been sent to your emergency contact.",
-                    duration: 5000,
+                    title: crisisMessageSent ? "Emergency Alerts Sent" : "Emergency Contact Alerted",
+                    description: crisisMessageSent 
+                        ? "An in-app message has been sent to your contact, and an SMS was also sent." 
+                        : "A message has been sent to your emergency contact.",
+                    duration: 7000,
                 });
             }
-            const regionUrl = helplineUrls[currentProfile.region] || helplineUrls.DEFAULT;
-            window.location.href = regionUrl;
+
+            // Always show the crisis response to the user
+            const crisisResponseMessage: Message = {
+                id: Date.now().toString() + "-crisis",
+                role: "assistant",
+                content: aiResult.response,
+            };
+            const finalChatsWithCrisis = updatedChatsWithUserMessage.map(chat =>
+                chat.id === currentChatId
+                    ? { ...chat, messages: [...chat.messages, crisisResponseMessage] }
+                    : chat
+            );
+            setChats(finalChatsWithCrisis);
+            setIsLoading(false);
+            
+            // Open the emergency resources dialog for the user
+            setIsEmergencyOpen(true);
             return;
         }
 
@@ -690,12 +732,12 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             content: textResponse,
         };
 
-        if (finalAudioResult?.audio) {
-            setSessionAudio(prev => ({ ...prev, [newAssistantMessage.id]: finalAudioResult.audio! }));
+        if (audioResult?.audio) {
+            setSessionAudio(prev => ({ ...prev, [newAssistantMessage.id]: audioResult.audio! }));
             if (!audioRef.current) {
                 audioRef.current = new Audio();
             }
-            audioRef.current.src = finalAudioResult.audio;
+            audioRef.current.src = audioResult.audio;
             audioRef.current.onended = () => setActiveSpeakingMessageId(null);
             audioRef.current.play();
             setActiveSpeakingMessageId(newAssistantMessage.id);
@@ -1276,5 +1318,3 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
-
-    
