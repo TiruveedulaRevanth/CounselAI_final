@@ -210,7 +210,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   const speechRecognition = useRef<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const speechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const finalTranscriptRef = useRef<string>("");
 
@@ -570,24 +569,13 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         const startTime = Date.now();
         
         // --- Core AI Tasks (blocking) ---
-        const [aiResult, audioResult] = await Promise.all([
-             personalizeTherapyStyle({
-                userName: userName,
-                therapyStyle: therapyStyle,
-                userInput: text,
-                history: historyForAI.slice(0, -1),
-                userContext: userContext,
-                chatJournal: updatedChat.journal,
-            }),
-             textToSpeech({ text: "placeholder" }) // Initial audio call is a placeholder
-        ]).catch(error => {
-            console.error("Error in core AI tasks:", error);
-            toast({
-                variant: "destructive",
-                title: "AI Error",
-                description: "Could not get a response from the AI. Please try again.",
-            });
-            throw error; // Re-throw to exit the try block
+        const aiResult = await personalizeTherapyStyle({
+            userName: userName,
+            therapyStyle: therapyStyle,
+            userInput: text,
+            history: historyForAI.slice(0, -1),
+            userContext: userContext,
+            chatJournal: updatedChat.journal,
         });
 
         const textResponse = aiResult.response;
@@ -693,10 +681,9 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             }
         });
         
-        // --- Background AI Tasks (fire and forget) ---
         const backgroundTasks = async () => {
           try {
-             const summarizePromise = isFirstMessage 
+            const summarizePromise = isFirstMessage 
                 ? summarizeChat({ message: text })
                 : Promise.resolve(null);
                 
@@ -728,7 +715,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                     return chat;
                 }));
             }
-
             if (journalSummaryResult?.summary) {
                 const newJournalEntry: UserJournalEntry = {
                     id: `user-entry-${Date.now()}`,
@@ -742,14 +728,15 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                 };
                 setUserJournalEntries(prev => [newJournalEntry, ...prev]);
             }
-          } catch(error) {
+          } catch (error) {
               console.error("Error in background tasks:", error);
           }
         };
-
-        backgroundTasks();
         
-        // --- Standalone Journal Update Task (fire and forget with its own error handling) ---
+        // Don't await background tasks
+        backgroundTasks();
+
+        // Run journal update as a separate, non-blocking task
         (async () => {
             try {
                 const fullHistory = [...historyForAI, {role: 'assistant', content: newAssistantMessage.content}];
@@ -774,18 +761,22 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
 
     } catch (error) {
-        // This catch block will now only handle errors from the primary AI calls if they re-throw
-        // Errors from background tasks are handled within those async functions.
-         setChats(currentChats.map(chat =>
+        console.error("Error in handleSend:", error);
+        setChats(currentChats.map(chat =>
             chat.id === currentChatId
                 ? { ...chat, messages: currentChat.messages }
                 : chat
          ));
          setIsLoading(false);
+         toast({
+            variant: "destructive",
+            title: "AI Error",
+            description: "Could not get a response from the AI. Please try again.",
+        });
     }
   }, [activeChatId, chats, isLoading, isListening, userName, therapyStyle, userContext, toast, currentProfile]);
 
-  const handleMicClick = useCallback((options?: { longListen?: boolean }) => {
+   const handleMicClick = useCallback((options?: { duration?: number }) => {
     const recognition = speechRecognition.current;
     if (!recognition) {
         toast({
@@ -801,8 +792,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     } else {
       finalTranscriptRef.current = "";
       setUserInput("");
-      recognition.longListen = options?.longListen || false;
-      recognition.start();
+      recognition.start(options?.duration);
     }
   }, [isListening, toast]);
   
@@ -814,7 +804,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     setActiveSpeakingMessageId(null);
     setIsAudioLoading(false);
     // Start listening with a longer timeout after interruption
-    handleMicClick({ longListen: true });
+    handleMicClick({ duration: 15000 });
   }, [handleMicClick]);
 
   const speakText = useCallback(async (text: string, messageId: string, emotion?: "Sadness" | "Anxiety" | "Anger" | "Joy" | "Neutral" | "Confusion" | "Stress" | "Happiness" | "Shame/Guilt" | "Hopelessness" | "Tiredness/Exhaustion" | "Love/Affection" | "Mixed") => {
@@ -877,40 +867,29 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       recognition.interimResults = true;
       recognition.lang = selectedLanguage;
 
-      // Add a custom property to the recognition object
-      (recognition as any).longListen = false;
-      let listeningTimeout: NodeJS.Timeout | null = null;
+      let sessionTimeout: NodeJS.Timeout | null = null;
+      let silenceTimeout: NodeJS.Timeout | null = null;
 
-
-      const stopListeningAndSend = () => {
-        setIsListening(false);
-        recognition.stop();
-
-        const transcript = finalTranscriptRef.current.trim();
-        if (transcript) {
-          handleSend(transcript);
+      // Override start to handle session timeout
+      recognition.start = (duration?: number) => {
+        if(isListening) return;
+        SpeechRecognition.prototype.start.call(recognition);
+        if (duration) {
+            sessionTimeout = setTimeout(() => {
+                if (isListening) {
+                    SpeechRecognition.prototype.stop.call(recognition);
+                }
+            }, duration);
         }
-        finalTranscriptRef.current = "";
-        setUserInput("");
       };
 
       recognition.onstart = () => {
         setIsListening(true);
-        // Set a hard stop timeout for the entire session
-        if(listeningTimeout) clearTimeout(listeningTimeout);
-        const sessionDuration = (recognition as any).longListen ? 15000 : 45000;
-        listeningTimeout = setTimeout(() => {
-          if(isListening) {
-             recognition.stop();
-          }
-        }, sessionDuration);
       };
 
       recognition.onresult = (event: any) => {
-        // Clear the end-of-speech timeout
-        if (speechTimeoutRef.current) {
-          clearTimeout(speechTimeoutRef.current);
-        }
+        // Clear silence timeout on new result
+        if (silenceTimeout) clearTimeout(silenceTimeout);
 
         let interimTranscript = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -925,14 +904,14 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         setUserInput(finalTranscriptRef.current + interimTranscript);
         
         // Start a timeout to stop if there's a 2-second pause
-        speechTimeoutRef.current = setTimeout(() => {
-          recognition.stop();
+        silenceTimeout = setTimeout(() => {
+            recognition.stop();
         }, 2000);
       };
       
       recognition.onend = () => {
-        if(speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
-        if(listeningTimeout) clearTimeout(listeningTimeout);
+        if(silenceTimeout) clearTimeout(silenceTimeout);
+        if(sessionTimeout) clearTimeout(sessionTimeout);
         
         const finalTranscript = finalTranscriptRef.current.trim();
         if (finalTranscript) {
@@ -973,7 +952,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
     return () => {
         speechRecognition.current?.abort();
-        if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
     }
   }, [toast, selectedLanguage, handleSend]);
 
@@ -1215,9 +1193,9 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                 
                 <DropdownMenu>
                     <Tooltip>
-                        <TooltipTrigger asChild={true}>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="hover:bg-destructive/10 hover:text-destructive" onClick={() => {}}><Trash2 size={20}/></Button>
+                        <TooltipTrigger asChild>
+                             <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="hover:bg-destructive/10 hover:text-destructive"><Trash2 size={20}/></Button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
                         <TooltipContent><p>Delete Chats</p></TooltipContent>
