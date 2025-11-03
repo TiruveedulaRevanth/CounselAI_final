@@ -786,7 +786,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     }
   }, [activeChatId, chats, isLoading, isListening, userName, therapyStyle, userContext, toast, currentProfile]);
 
-   const handleMicClick = useCallback((options?: { duration?: number }) => {
+  const handleMicClick = useCallback(() => {
     const recognition = speechRecognition.current;
     if (!recognition) {
         toast({
@@ -801,21 +801,8 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       recognition.stop();
     } else {
       finalTranscriptRef.current = "";
-      setUserInput(""); // Clear interim text
+      setUserInput(""); 
       recognition.start();
-
-      // Clear any existing timeout
-      if (silenceTimeoutRef.current) {
-        clearTimeout(silenceTimeoutRef.current);
-      }
-      
-      // Set a new timeout to stop recognition after a period of silence or a max duration
-      const timeoutDuration = options?.duration || 2000;
-      silenceTimeoutRef.current = setTimeout(() => {
-        if (isListening) {
-          recognition.stop();
-        }
-      }, timeoutDuration);
     }
   }, [isListening, toast]);
   
@@ -826,9 +813,25 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     }
     setActiveSpeakingMessageId(null);
     setIsAudioLoading(false);
-    // Start listening with a longer timeout after interruption
-    handleMicClick({ duration: 15000 });
-  }, [handleMicClick]);
+    
+    // Interrupt and start listening for a longer duration
+    const recognition = speechRecognition.current;
+    if (recognition) {
+        if (isListening) {
+            recognition.stop();
+        }
+        finalTranscriptRef.current = "";
+        setUserInput(""); 
+        recognition.start();
+        // This is a special long-listen session after interruption
+        if(silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
+        silenceTimeoutRef.current = setTimeout(() => {
+            if (speechRecognition.current) {
+                speechRecognition.current.stop();
+            }
+        }, 15000);
+    }
+  }, [isListening]);
 
   const speakText = useCallback(async (text: string, messageId: string, emotion?: "Sadness" | "Anxiety" | "Anger" | "Joy" | "Neutral" | "Confusion" | "Stress" | "Happiness" | "Shame/Guilt" | "Hopelessness" | "Tiredness/Exhaustion" | "Love/Affection" | "Mixed") => {
       if (activeSpeakingMessageId) {
@@ -896,28 +899,27 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       };
 
       recognition.onresult = (event: any) => {
-        // Clear the silence timeout on any new result
         if (silenceTimeoutRef.current) {
             clearTimeout(silenceTimeoutRef.current);
         }
 
         let interimTranscript = "";
+        let finalTranscript = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscriptRef.current += transcript + ' ';
+            finalTranscript += transcript + ' ';
           } else {
             interimTranscript += transcript;
           }
         }
         
+        finalTranscriptRef.current += finalTranscript;
         setUserInput(finalTranscriptRef.current + interimTranscript);
         
-        // Set a new timeout to stop if there's a 2-second pause
-        const duration = isListening ? 2000 : 15000;
         silenceTimeoutRef.current = setTimeout(() => {
             recognition.stop();
-        }, duration);
+        }, 2000);
       };
       
       recognition.onend = () => {
@@ -970,7 +972,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
             clearTimeout(silenceTimeoutRef.current);
         }
     }
-  }, [toast, selectedLanguage, handleSend, isListening]);
+  }, [toast, selectedLanguage, handleSend]);
 
 
   useEffect(() => {
@@ -1316,7 +1318,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                             <Button 
                                 variant="ghost"
                                 size="icon" 
-                                onClick={() => handleMicClick()}
+                                onClick={handleMicClick}
                                 className={isListening ? "text-red-500" : ""}
                             >
                                 <Mic className="h-5 w-5"/>
@@ -1344,5 +1346,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
+
 
     
