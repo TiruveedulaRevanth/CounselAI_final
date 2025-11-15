@@ -249,6 +249,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const finalTranscriptRef = useRef('');
+  const listeningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const userName = currentProfile.name;
   
@@ -834,10 +835,17 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     }
 
     if (isListening) {
+      if (listeningTimeoutRef.current) {
+        clearTimeout(listeningTimeoutRef.current);
+        listeningTimeoutRef.current = null;
+      }
       recognition.stop();
     } else {
       finalTranscriptRef.current = ''; // Reset transcript
       recognition.start();
+      listeningTimeoutRef.current = setTimeout(() => {
+          recognition.stop();
+      }, 15000); // Set a 15-second timeout
     }
   }, [isListening, toast]);
   
@@ -928,6 +936,10 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       };
       
       recognition.onend = () => {
+        if (listeningTimeoutRef.current) {
+          clearTimeout(listeningTimeoutRef.current);
+          listeningTimeoutRef.current = null;
+        }
         if (finalTranscriptRef.current.trim()) {
            handleSend(finalTranscriptRef.current.trim());
         }
@@ -960,6 +972,9 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     return () => {
         if (speechRecognition.current) {
           speechRecognition.current.abort();
+        }
+        if (listeningTimeoutRef.current) {
+          clearTimeout(listeningTimeoutRef.current);
         }
     }
   }, [toast, selectedLanguage, handleSend]);
@@ -1320,4 +1335,3 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
-
