@@ -248,8 +248,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   const speechRecognition = useRef<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const finalTranscriptRef = useRef('');
-  const listeningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const userName = currentProfile.name;
   
@@ -835,13 +833,9 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     }
 
     if (isListening) {
-      if (listeningTimeoutRef.current) {
-        clearTimeout(listeningTimeoutRef.current);
-        listeningTimeoutRef.current = null;
-      }
       recognition.stop();
     } else {
-      finalTranscriptRef.current = ''; // Reset transcript
+      setUserInput("");
       recognition.start();
     }
   }, [isListening, toast]);
@@ -911,48 +905,29 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       
-      recognition.continuous = true;
+      recognition.continuous = false;
       recognition.interimResults = true;
       recognition.lang = selectedLanguage;
 
       recognition.onstart = () => {
         setIsListening(true);
-        // Safety net: stop listening after 15 seconds regardless
-        if (listeningTimeoutRef.current) clearTimeout(listeningTimeoutRef.current);
-        listeningTimeoutRef.current = setTimeout(() => {
-            recognition.stop();
-        }, 15000);
       };
 
       recognition.onresult = (event: any) => {
-        // As user speaks, keep resetting the safety net timer
-        if (listeningTimeoutRef.current) clearTimeout(listeningTimeoutRef.current);
-        listeningTimeoutRef.current = setTimeout(() => {
-            recognition.stop();
-        }, 15000);
-
         let interimTranscript = "";
+        let finalTranscript = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscriptRef.current += transcript + ' ';
+            finalTranscript += transcript;
           } else {
             interimTranscript += transcript;
           }
         }
-        setUserInput(finalTranscriptRef.current + interimTranscript);
+        setUserInput(finalTranscript + interimTranscript);
       };
       
       recognition.onend = () => {
-        if (listeningTimeoutRef.current) {
-          clearTimeout(listeningTimeoutRef.current);
-          listeningTimeoutRef.current = null;
-        }
-        if (finalTranscriptRef.current.trim()) {
-           handleSend(finalTranscriptRef.current.trim());
-        }
-        finalTranscriptRef.current = '';
-        setUserInput('');
         setIsListening(false);
       };
       
@@ -981,11 +956,8 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         if (speechRecognition.current) {
           speechRecognition.current.abort();
         }
-        if (listeningTimeoutRef.current) {
-          clearTimeout(listeningTimeoutRef.current);
-        }
     }
-  }, [toast, selectedLanguage, handleSend]);
+  }, [toast, selectedLanguage]);
 
 
   useEffect(() => {
@@ -998,7 +970,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         }
       }
     }, 100);
-  }, [activeChat?.messages, isLoading, isListening]);
+  }, [activeChat?.messages, isLoading]);
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
