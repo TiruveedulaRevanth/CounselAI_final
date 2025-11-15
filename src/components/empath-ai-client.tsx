@@ -210,9 +210,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   const speechRecognition = useRef<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
-  const finalTranscriptRef = useRef<string>("");
-  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const userName = currentProfile.name;
   
@@ -800,8 +797,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     if (isListening) {
       recognition.stop();
     } else {
-      finalTranscriptRef.current = "";
-      setUserInput(""); 
       recognition.start();
     }
   }, [isListening, toast]);
@@ -813,8 +808,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     }
     setActiveSpeakingMessageId(null);
     setIsAudioLoading(false);
-    
-    // Interrupt and start listening
     handleMicClick();
   }, [handleMicClick]);
 
@@ -878,50 +871,32 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       recognition.interimResults = true;
       recognition.lang = selectedLanguage;
 
+      let finalTranscript = '';
 
       recognition.onstart = () => {
         setIsListening(true);
-        // Safety net to turn off mic after 20 seconds of continuous listening
-        if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
-        silenceTimeoutRef.current = setTimeout(() => {
-            if (speechRecognition.current) {
-                speechRecognition.current.stop();
-            }
-        }, 20000);
       };
 
       recognition.onresult = (event: any) => {
-        // Reset silence timeout whenever new speech is detected
-        if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
-        silenceTimeoutRef.current = setTimeout(() => {
-             if (speechRecognition.current) {
-                speechRecognition.current.stop();
-            }
-        }, 2000); // 2-second pause triggers stop
-
         let interimTranscript = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscriptRef.current += transcript + ' ';
+            finalTranscript += transcript + ' ';
           } else {
             interimTranscript += transcript;
           }
         }
         
-        setUserInput(finalTranscriptRef.current + interimTranscript);
+        setUserInput(finalTranscript + interimTranscript);
       };
       
       recognition.onend = () => {
-        if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
-        
-        const finalTranscript = finalTranscriptRef.current.trim();
-        if (finalTranscript) {
-           handleSend(finalTranscript);
+        if (finalTranscript.trim()) {
+           handleSend(finalTranscript.trim());
         }
-        
-        setUserInput("");
-        finalTranscriptRef.current = "";
+        finalTranscript = '';
+        setUserInput('');
         setIsListening(false);
       };
       
@@ -931,12 +906,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
               variant: "destructive",
               title: "Microphone Access Denied",
               description: "Please enable microphone access in your browser settings to use this feature.",
-            });
-        } else if (event.error === 'network') {
-            toast({
-              variant: "destructive",
-              title: "Speech Recognition Error",
-              description: "Network error. Please check your connection and try again.",
             });
         } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
             console.error("Speech recognition error", event.error);
@@ -956,7 +925,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         if (speechRecognition.current) {
           speechRecognition.current.abort();
         }
-        if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
     }
   }, [toast, selectedLanguage, handleSend]);
 
