@@ -814,24 +814,9 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     setActiveSpeakingMessageId(null);
     setIsAudioLoading(false);
     
-    // Interrupt and start listening for a longer duration
-    const recognition = speechRecognition.current;
-    if (recognition) {
-        if (isListening) {
-            recognition.stop();
-        }
-        finalTranscriptRef.current = "";
-        setUserInput(""); 
-        recognition.start();
-        // This is a special long-listen session after interruption
-        if(silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
-        silenceTimeoutRef.current = setTimeout(() => {
-            if (speechRecognition.current) {
-                speechRecognition.current.stop();
-            }
-        }, 15000);
-    }
-  }, [isListening]);
+    // Interrupt and start listening
+    handleMicClick();
+  }, [handleMicClick]);
 
   const speakText = useCallback(async (text: string, messageId: string, emotion?: "Sadness" | "Anxiety" | "Anger" | "Joy" | "Neutral" | "Confusion" | "Stress" | "Happiness" | "Shame/Guilt" | "Hopelessness" | "Tiredness/Exhaustion" | "Love/Affection" | "Mixed") => {
       if (activeSpeakingMessageId) {
@@ -896,36 +881,39 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
       recognition.onstart = () => {
         setIsListening(true);
+        // Safety net to turn off mic after 20 seconds of continuous listening
+        if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
+        silenceTimeoutRef.current = setTimeout(() => {
+            if (speechRecognition.current) {
+                speechRecognition.current.stop();
+            }
+        }, 20000);
       };
 
       recognition.onresult = (event: any) => {
-        if (silenceTimeoutRef.current) {
-            clearTimeout(silenceTimeoutRef.current);
-        }
+        // Reset silence timeout whenever new speech is detected
+        if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
+        silenceTimeoutRef.current = setTimeout(() => {
+             if (speechRecognition.current) {
+                speechRecognition.current.stop();
+            }
+        }, 2000); // 2-second pause triggers stop
 
         let interimTranscript = "";
-        let finalTranscript = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
+            finalTranscriptRef.current += transcript + ' ';
           } else {
             interimTranscript += transcript;
           }
         }
         
-        finalTranscriptRef.current += finalTranscript;
         setUserInput(finalTranscriptRef.current + interimTranscript);
-        
-        silenceTimeoutRef.current = setTimeout(() => {
-            recognition.stop();
-        }, 2000);
       };
       
       recognition.onend = () => {
-        if (silenceTimeoutRef.current) {
-            clearTimeout(silenceTimeoutRef.current);
-        }
+        if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
         
         const finalTranscript = finalTranscriptRef.current.trim();
         if (finalTranscript) {
@@ -968,9 +956,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         if (speechRecognition.current) {
           speechRecognition.current.abort();
         }
-        if (silenceTimeoutRef.current) {
-            clearTimeout(silenceTimeoutRef.current);
-        }
+        if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
     }
   }, [toast, selectedLanguage, handleSend]);
 
@@ -1213,7 +1199,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                 <DropdownMenu>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                             <DropdownMenuTrigger asChild>
+                            <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="hover:bg-destructive/10 hover:text-destructive"><Trash2 size={20}/></Button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
@@ -1346,6 +1332,5 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
-
 
     
