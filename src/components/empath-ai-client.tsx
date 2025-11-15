@@ -160,6 +160,44 @@ const initialChatJournal: ChatJournal = {
     progressSummary: 'No progress to report yet.',
 };
 
+interface ChatMenuItemProps {
+  chat: Chat;
+  activeChatId: string | null;
+  handleSwitchChat: (chatId: string) => void;
+  openRenameDialog: (chat: Chat) => void;
+  handleDeleteChat: (chatId: string) => void;
+}
+
+const ChatMenuItem = ({ chat, activeChatId, handleSwitchChat, openRenameDialog, handleDeleteChat }: ChatMenuItemProps) => (
+  <SidebarMenuItem>
+      <SidebarMenuButton 
+          onClick={() => handleSwitchChat(chat.id)}
+          isActive={chat.id === activeChatId}
+          className="truncate"
+      >
+          {chat.name}
+      </SidebarMenuButton>
+      <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+               <SidebarMenuAction tooltip="Chat Options">
+                  <MoreHorizontal/>
+              </SidebarMenuAction>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => openRenameDialog(chat)}>
+                  <FilePenLine className="mr-2 h-4 w-4" />
+                  Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDeleteChat(chat.id)} className="text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+              </DropdownMenuItem>
+          </DropdownMenuContent>
+      </DropdownMenu>
+  </SidebarMenuItem>
+);
+
+
 export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAIClientProps) {
   const { toast } = useToast();
   const [chats, setChats] = useState<Chat[]>([]);
@@ -210,6 +248,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   const speechRecognition = useRef<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const finalTranscriptRef = useRef('');
 
   const userName = currentProfile.name;
   
@@ -797,6 +836,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     if (isListening) {
       recognition.stop();
     } else {
+      finalTranscriptRef.current = ''; // Reset transcript
       recognition.start();
     }
   }, [isListening, toast]);
@@ -808,8 +848,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     }
     setActiveSpeakingMessageId(null);
     setIsAudioLoading(false);
-    handleMicClick();
-  }, [handleMicClick]);
+  }, []);
 
   const speakText = useCallback(async (text: string, messageId: string, emotion?: "Sadness" | "Anxiety" | "Anger" | "Joy" | "Neutral" | "Confusion" | "Stress" | "Happiness" | "Shame/Guilt" | "Hopelessness" | "Tiredness/Exhaustion" | "Love/Affection" | "Mixed") => {
       if (activeSpeakingMessageId) {
@@ -871,8 +910,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
       recognition.interimResults = true;
       recognition.lang = selectedLanguage;
 
-      let finalTranscript = '';
-
       recognition.onstart = () => {
         setIsListening(true);
       };
@@ -882,20 +919,19 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
+            finalTranscriptRef.current += transcript + ' ';
           } else {
             interimTranscript += transcript;
           }
         }
-        
-        setUserInput(finalTranscript + interimTranscript);
+        setUserInput(finalTranscriptRef.current + interimTranscript);
       };
       
       recognition.onend = () => {
-        if (finalTranscript.trim()) {
-           handleSend(finalTranscript.trim());
+        if (finalTranscriptRef.current.trim()) {
+           handleSend(finalTranscriptRef.current.trim());
         }
-        finalTranscript = '';
+        finalTranscriptRef.current = '';
         setUserInput('');
         setIsListening(false);
       };
@@ -939,7 +975,7 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
         }
       }
     }, 100);
-  }, [activeChat?.messages, isLoading]);
+  }, [activeChat?.messages, isLoading, isListening]);
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1032,35 +1068,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </AlertDialog>
   );
 
-  const ChatMenuItem = ({ chat }: { chat: Chat }) => (
-    <SidebarMenuItem key={chat.id}>
-        <SidebarMenuButton 
-            onClick={() => handleSwitchChat(chat.id)}
-            isActive={chat.id === activeChatId}
-            className="truncate"
-        >
-            {chat.name}
-        </SidebarMenuButton>
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                 <SidebarMenuAction tooltip="Chat Options">
-                    <MoreHorizontal/>
-                </SidebarMenuAction>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => openRenameDialog(chat)}>
-                    <FilePenLine className="mr-2 h-4 w-4" />
-                    Rename
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDeleteChat(chat.id)} className="text-destructive">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    </SidebarMenuItem>
-);
-
   return (
     <>
     <TooltipProvider>
@@ -1121,7 +1128,14 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                         <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
                         <SidebarMenu>
                             {group.chats.map(chat => (
-                                <ChatMenuItem key={chat.id} chat={chat} />
+                                <ChatMenuItem 
+                                  key={chat.id} 
+                                  chat={chat}
+                                  activeChatId={activeChatId}
+                                  handleSwitchChat={handleSwitchChat}
+                                  openRenameDialog={openRenameDialog}
+                                  handleDeleteChat={handleDeleteChat}
+                                />
                             ))}
                         </SidebarMenu>
                     </SidebarGroup>
@@ -1253,6 +1267,12 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
                        />
                     ))}
                     {isLoading && <ChatMessage.Loading />}
+                    {isListening && (
+                        <div className="flex items-center justify-center text-muted-foreground py-2">
+                            <Mic className="h-4 w-4 mr-2 animate-pulse text-red-500" />
+                            <span>Mic is listening to you...</span>
+                        </div>
+                    )}
                 </div>
               </ScrollArea>
           </div>
@@ -1301,4 +1321,3 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
   );
 }
 
-    
