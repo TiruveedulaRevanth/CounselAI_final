@@ -843,9 +843,6 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     } else {
       finalTranscriptRef.current = ''; // Reset transcript
       recognition.start();
-      listeningTimeoutRef.current = setTimeout(() => {
-          recognition.stop();
-      }, 15000); // Set a 15-second timeout
     }
   }, [isListening, toast]);
   
@@ -920,9 +917,20 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
 
       recognition.onstart = () => {
         setIsListening(true);
+        // Safety net: stop listening after 15 seconds regardless
+        if (listeningTimeoutRef.current) clearTimeout(listeningTimeoutRef.current);
+        listeningTimeoutRef.current = setTimeout(() => {
+            recognition.stop();
+        }, 15000);
       };
 
       recognition.onresult = (event: any) => {
+        // As user speaks, keep resetting the safety net timer
+        if (listeningTimeoutRef.current) clearTimeout(listeningTimeoutRef.current);
+        listeningTimeoutRef.current = setTimeout(() => {
+            recognition.stop();
+        }, 15000);
+
         let interimTranscript = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const transcript = event.results[i][0].transcript;
@@ -1335,3 +1343,5 @@ export default function EmpathAIClient({ activeProfile, onSignOut }: EmpathAICli
     </>
   );
 }
+
+    
